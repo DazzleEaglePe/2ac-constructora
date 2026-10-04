@@ -24,8 +24,8 @@
 
 | Sprint | Estado        | Avance | Notas |
 | ------ | ------------- | ------ | ----- |
-| S0     | ⏳ En curso    | 85 %   | Hecho: monorepo, API + BD + Redis, app Flutter con tema A2C (iOS simulador y web). Falta: repo en GitHub + CI verde, Android y dispositivos físicos |
-| S1     | ⬜ Pendiente   | 0 %    |       |
+| S0     | ✅ Completado* | 95 %   | *Quedan como tareas del usuario: aceptar licencias Android y probar en un celular físico; proteger `main` |
+| S1     | ⏳ En curso    | 0 %    | Rama `feat/s1-auth-usuarios` |
 | S2     | ⬜ Pendiente   | 0 %    |       |
 | S3     | ⬜ Pendiente   | 0 %    |       |
 | S4     | ⬜ Pendiente   | 0 %    |       |
@@ -52,7 +52,7 @@ Leyenda: ⬜ pendiente · ⏳ en curso · ✅ completado · ⚠️ bloqueado
 **Objetivo:** dejar listo el esqueleto de API y app para que desde S1 solo se construyan funcionalidades.
 
 **Repositorio y herramientas**
-- [ ] Crear repositorio remoto `a2c-inventario` en GitHub con `main` protegida — *repo git local creado; falta definir cuenta/organización de GitHub*
+- [x] Repositorio en GitHub: [`DazzleEaglePe/2ac-constructora`](https://github.com/DazzleEaglePe/2ac-constructora) — *pendiente: protección de la rama `main`*
 - [x] Estructura de monorepo según `11_ESTRUCTURA_PROYECTO.md`
 - [x] `.editorconfig`, `.gitignore`, commitlint (Conventional Commits), plantillas de PR
 - [x] Docker Compose local: PostgreSQL 16 + Redis 7 (puertos 5433 y 6380 para no chocar con otros proyectos)
@@ -82,7 +82,7 @@ Leyenda: ⬜ pendiente · ⏳ en curso · ✅ completado · ⚠️ bloqueado
 **Criterios de aceptación**
 - [x] `docker compose up` + `pnpm dev:api` responde `200` en `/health/ready`
 - [ ] La app abre en un Android y un iOS físicos con el tema A2C y la fuente Geist — *verificado en **simulador iOS (iPhone 18 Pro)** y **web**, conectada a la API; falta Android (aceptar licencias del SDK) y dispositivos físicos*
-- [ ] CI verde en un PR de prueba — *pendiente del repositorio remoto en GitHub*
+- [x] CI verde en GitHub Actions (API, Mobile y Seguridad)
 
 ---
 

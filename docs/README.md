@@ -41,7 +41,8 @@ Sistema de control de inventario de **herramientas y maquinaria por obra**. El p
 | ------------------------ | -------------- |
 | Diseño UI (canvas)       | ✅ Completo (v1) |
 | Documentación base       | ✅ Completa (v1) |
-| Sprint 0 — Fundación     | ⏳ En curso (85 %) |
+| Sprint 0 — Fundación     | ✅ Completado    |
+| Sprint 1 — Bienvenida, auth y usuarios | ⏳ En curso |
 
 El avance por sprint se marca en las checklists de [`10_PLAN_DESARROLLO.md`](./10_PLAN_DESARROLLO.md) §3.
 

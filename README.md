@@ -26,4 +26,4 @@ Toda la documentación del proyecto está en [`docs/`](./docs/README.md):
 
 ## Estado
 
-Documentación v1 lista. **Sprint 0 — Fundación técnica** en curso (85 %). Arranque local en [`docs/11_ESTRUCTURA_PROYECTO.md` §6](./docs/11_ESTRUCTURA_PROYECTO.md).
+Documentación v1 lista. **Sprint 0 — Fundación técnica** completado; **Sprint 1** en curso. Arranque local en [`docs/11_ESTRUCTURA_PROYECTO.md` §6](./docs/11_ESTRUCTURA_PROYECTO.md).
