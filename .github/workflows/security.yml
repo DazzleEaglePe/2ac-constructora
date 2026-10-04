@@ -12,9 +12,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Se usa la imagen oficial en vez de gitleaks-action: la acción falla en el
+      # primer push (busca el padre del commit inicial).
+      - name: Escanear todo el historial
+        run: docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:latest git /repo --verbose --redact
 
   dependencias:
     runs-on: ubuntu-latest

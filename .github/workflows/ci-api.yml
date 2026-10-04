@@ -36,6 +36,8 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Generar cliente Prisma
+        run: pnpm --filter @a2c/api db:generate
       - name: Migraciones
         working-directory: apps/api
         run: pnpm prisma migrate deploy
