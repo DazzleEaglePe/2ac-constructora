@@ -1,0 +1,6 @@
+{
+  "ENV": "dev",
+  "API_BASE_URL": "http://localhost:3100/api/v1",
+  "WS_URL": "http://localhost:3100/realtime",
+  "SENTRY_DSN": ""
+}

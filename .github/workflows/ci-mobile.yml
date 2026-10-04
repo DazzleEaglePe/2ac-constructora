@@ -1,0 +1,31 @@
+name: CI Mobile
+
+on:
+  pull_request:
+    paths: ['apps/mobile/**', '.github/workflows/ci-mobile.yml']
+  push:
+    branches: [main]
+    paths: ['apps/mobile/**']
+
+jobs:
+  flutter:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter gen-l10n
+      - name: Formato
+        run: dart format --output=none --set-exit-if-changed lib test
+      - name: Análisis estático
+        run: flutter analyze
+      - name: Pruebas
+        run: flutter test
+      - name: Build web (verificación)
+        run: flutter build web --dart-define-from-file=env/example.json

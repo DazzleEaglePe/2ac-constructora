@@ -1,0 +1,49 @@
+name: CI API
+
+on:
+  pull_request:
+    paths: ['apps/api/**', 'pnpm-lock.yaml', '.github/workflows/ci-api.yml']
+  push:
+    branches: [main]
+    paths: ['apps/api/**', 'pnpm-lock.yaml']
+
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: a2c
+          POSTGRES_PASSWORD: a2c
+          POSTGRES_DB: a2c
+        ports: ['5433:5432']
+        options: >-
+          --health-cmd "pg_isready -U a2c -d a2c" --health-interval 5s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ['6380:6379']
+        options: --health-cmd "redis-cli ping" --health-interval 5s --health-retries 10
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://a2c:a2c@localhost:5433/a2c?schema=public
+      REDIS_URL: redis://localhost:6380
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Migraciones
+        working-directory: apps/api
+        run: pnpm prisma migrate deploy
+      - name: Lint
+        run: pnpm --filter @a2c/api lint
+      - name: Typecheck
+        run: pnpm --filter @a2c/api typecheck
+      - name: Pruebas (unitarias + e2e)
+        run: pnpm --filter @a2c/api test
+      - name: Build
+        run: pnpm --filter @a2c/api build

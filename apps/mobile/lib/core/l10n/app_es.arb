@@ -1,0 +1,14 @@
+{
+  "@@locale": "es",
+  "appName": "A2C Inventario",
+  "brandName": "Constructora A2C",
+  "tagline": "Tu visión — nuestra ejecución",
+  "statusOperational": "Operativo",
+  "statusMaintenance": "Mantenimiento",
+  "statusRetired": "Baja",
+  "navSites": "Obras",
+  "navInventory": "Inventario",
+  "navUsers": "Usuarios",
+  "apiOnline": "API en línea",
+  "apiOffline": "API sin conexión"
+}

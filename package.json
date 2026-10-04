@@ -1,0 +1,28 @@
+{
+  "name": "a2c-inventario",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "pnpm@11.21.0",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "docker:up": "docker compose -f tools/docker/docker-compose.yml up -d",
+    "docker:down": "docker compose -f tools/docker/docker-compose.yml down",
+    "dev:api": "pnpm --filter @a2c/api start:dev",
+    "build:api": "pnpm --filter @a2c/api build",
+    "test:api": "pnpm --filter @a2c/api test",
+    "lint:api": "pnpm --filter @a2c/api lint",
+    "db:migrate": "pnpm --filter @a2c/api db:migrate",
+    "db:deploy": "pnpm --filter @a2c/api db:deploy",
+    "db:seed": "pnpm --filter @a2c/api db:seed",
+    "openapi:export": "pnpm --filter @a2c/api openapi:export",
+    "mobile:test": "cd apps/mobile && flutter analyze && flutter test",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^20.2.0",
+    "@commitlint/config-conventional": "^20.2.0",
+    "prettier": "^3.6.0"
+  }
+}

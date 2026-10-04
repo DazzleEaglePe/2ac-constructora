@@ -1,0 +1,33 @@
+# Infraestructura local de A2C Inventario.
+# Puertos distintos a los por defecto (5433, 6380) para no chocar con otros proyectos locales.
+name: a2c-inventario
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: a2c
+      POSTGRES_PASSWORD: a2c
+      POSTGRES_DB: a2c
+    ports:
+      - '5433:5432'
+    volumes:
+      - a2c-pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U a2c -d a2c']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '6380:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  a2c-pg:
