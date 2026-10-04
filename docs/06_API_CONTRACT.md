@@ -41,6 +41,10 @@
 | `CUENTA_BLOQUEADA`        | 423  | Demasiados intentos (incluye `lockedUntil`)              |
 | `CUENTA_DESACTIVADA`      | 403  | Usuario inactivo                                          |
 | `CAMBIO_CLAVE_REQUERIDO`  | 403  | Debe cambiar la contraseña temporal                      |
+| `CLAVE_TEMPORAL_VENCIDA`  | 403  | La contraseña temporal superó las 72 h                   |
+| `NO_AUTENTICADO`          | 401  | Falta el access token, es inválido o venció              |
+| `NO_PUEDES_DESACTIVARTE`  | 409  | Un administrador intenta desactivar su propia cuenta     |
+| `ULTIMO_ADMINISTRADOR`    | 409  | La acción dejaría el sistema sin administradores activos |
 | `SIN_PERMISO`             | 403  | El rol no permite la acción                               |
 | `VALIDACION`              | 422  | Payload inválido (`errors[]` con campo y mensaje)         |
 | `STOCK_INSUFICIENTE`      | 409  | Cantidad mayor a la disponible en el origen (RN-02)       |
@@ -81,7 +85,7 @@ Revoca el refresh token actual. `204`.
 
 ### `POST /auth/change-password`
 
-`{ "currentPassword": "...", "newPassword": "..." }` → `204`. Obligatorio si `mustChangePassword = true`.
+`{ "currentPassword": "...", "newPassword": "..." }` → `200` con un par de tokens nuevo (sin la marca de cambio pendiente); las demás sesiones del usuario se cierran. Obligatorio si `mustChangePassword = true`: mientras tanto, todo endpoint salvo `/auth/me` y `/auth/change-password` responde `CAMBIO_CLAVE_REQUERIDO`.
 
 ### `GET /auth/me`
 

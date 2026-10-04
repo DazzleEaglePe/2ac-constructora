@@ -19,3 +19,4 @@ apps/mobile/env/*.json
 .DS_Store
 .idea/
 .vscode/
+*.tsbuildinfo

@@ -15,8 +15,9 @@ export const envSchema = z.object({
         .map((s) => s.trim())
         .filter(Boolean),
     ),
-  JWT_PRIVATE_KEY: z.string().optional(),
-  JWT_PUBLIC_KEY: z.string().optional(),
+  // PEM con saltos de línea escapados (\n), generados por tools/scripts/generate-jwt-keys.sh
+  JWT_PRIVATE_KEY: z.string().min(1).transform((v) => v.replace(/\\n/g, '\n')),
+  JWT_PUBLIC_KEY: z.string().min(1).transform((v) => v.replace(/\\n/g, '\n')),
   JWT_ACCESS_TTL: z.string().default('15m'),
   REFRESH_TTL_DAYS: z.coerce.number().int().positive().default(30),
   SENTRY_DSN: z.string().optional(),

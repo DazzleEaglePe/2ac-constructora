@@ -25,7 +25,7 @@
 | Sprint | Estado        | Avance | Notas |
 | ------ | ------------- | ------ | ----- |
 | S0     | ✅ Completado* | 95 %   | *Quedan como tareas del usuario: aceptar licencias Android y probar en un celular físico; proteger `main` |
-| S1     | ⏳ En curso    | 0 %    | Rama `feat/s1-auth-usuarios` |
+| S1     | ⏳ En curso    | 45 %   | API de auth y usuarios lista (28 pruebas). Sigue: app Flutter |
 | S2     | ⬜ Pendiente   | 0 %    |       |
 | S3     | ⬜ Pendiente   | 0 %    |       |
 | S4     | ⬜ Pendiente   | 0 %    |       |
@@ -94,13 +94,13 @@ Leyenda: ⬜ pendiente · ⏳ en curso · ✅ completado · ⚠️ bloqueado
 - [ ] Cliente API Dart generado desde `openapi.yaml` en `packages/api_client`
 
 **API**
-- [ ] `POST /auth/login` con Argon2id, bloqueo por intentos y tiempo constante
-- [ ] JWT RS256 (15 min) + refresh rotativo con detección de reutilización
-- [ ] `POST /auth/refresh`, `/auth/logout`, `/auth/change-password`, `GET /auth/me`
-- [ ] `JwtAuthGuard`, `RolesGuard`, decorador `@Roles` (roles `ADMIN` y `OPERADOR`)
-- [ ] Módulo `users`: listar, crear (DNI peruano de 8 dígitos), editar, desactivar/activar, restablecer contraseña
-- [ ] Rate limiting de login con Redis
-- [ ] Pruebas e2e de auth y usuarios (casos de bloqueo, desactivado, temporal)
+- [x] `POST /auth/login` con Argon2id, bloqueo por intentos y tiempo constante
+- [x] JWT RS256 (15 min) + refresh rotativo con detección de reutilización
+- [x] `POST /auth/refresh`, `/auth/logout`, `/auth/change-password`, `GET /auth/me`
+- [x] `JwtAuthGuard`, `RolesGuard`, decorador `@Roles` (roles `ADMIN` y `OPERADOR`)
+- [x] Módulo `users`: listar, crear (DNI peruano de 8 dígitos), editar, desactivar/activar, restablecer contraseña
+- [x] Rate limiting de login (20/min por IP, en memoria) — *almacenamiento en Redis para varias instancias: S5*
+- [x] Pruebas e2e de auth y usuarios (casos de bloqueo, desactivado, temporal)
 
 **App**
 - [ ] **Splash animado** `A2CSplashAnimation` (CustomPainter, 6,5 s, cortes de fondo, viga, franja, revelado de CONSTRUCTORA) según `09` §8
