@@ -1,0 +1,21 @@
+# Node / API
+node_modules/
+dist/
+coverage/
+.env
+.env.*
+!.env.example
+
+# Flutter / Dart
+.dart_tool/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.iml
+apps/mobile/env/*.json
+!apps/mobile/env/example.json
+
+# Sistema / IDE
+.DS_Store
+.idea/
+.vscode/
