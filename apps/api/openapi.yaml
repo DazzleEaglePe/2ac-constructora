@@ -528,6 +528,120 @@ paths:
         - bearer: []
       tags:
         - assets
+  /api/v1/movements:
+    get:
+      operationId: MovementsController_list
+      parameters:
+        - name: assetId
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: siteId
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: userId
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: from
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: to
+          required: false
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      security:
+        - bearer: []
+      tags:
+        - movements
+    post:
+      operationId: MovementsController_create
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMovementDto"
+      responses:
+        "201":
+          description: ""
+      security:
+        - bearer: []
+      tags:
+        - movements
+  /api/v1/movements/{id}:
+    get:
+      operationId: MovementsController_get
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      security:
+        - bearer: []
+      tags:
+        - movements
+  /api/v1/observations:
+    get:
+      operationId: ObservationsController_list
+      parameters:
+        - name: status
+          required: false
+          in: query
+          schema:
+            type: string
+            enum:
+              - ABIERTA
+              - ATENDIDA
+        - name: assetId
+          required: false
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      security:
+        - bearer: []
+      tags:
+        - observations
+  /api/v1/observations/{id}/resolve:
+    post:
+      operationId: ObservationsController_resolve
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResolveObservationDto"
+      responses:
+        "200":
+          description: ""
+      security:
+        - bearer: []
+      tags:
+        - observations
   /health/live:
     get:
       operationId: HealthController_live
@@ -830,3 +944,52 @@ components:
           example: Se revisó el cable y está en buen estado.
       required:
         - body
+    CreateMovementObservationDto:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - DANADO
+            - INCOMPLETO
+            - FALTANTE
+            - OTRO
+        description:
+          type: string
+          minLength: 3
+          maxLength: 500
+      required:
+        - type
+        - description
+    CreateMovementDto:
+      type: object
+      properties:
+        assetId:
+          type: string
+        fromSiteId:
+          type: string
+        toSiteId:
+          type: string
+        quantity:
+          type: number
+          minimum: 1
+        note:
+          type: string
+        clientCreatedAt:
+          type: string
+        observation:
+          $ref: "#/components/schemas/CreateMovementObservationDto"
+      required:
+        - assetId
+        - fromSiteId
+        - toSiteId
+        - quantity
+    ResolveObservationDto:
+      type: object
+      properties:
+        resolution:
+          type: string
+          minLength: 3
+          maxLength: 500
+      required:
+        - resolution

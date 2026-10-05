@@ -12,6 +12,9 @@ import '../../../shared/widgets/a2c_chips.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../data/assets_repository.dart';
 import '../domain/asset.dart';
+import '../../movements/data/movements_repository.dart';
+import '../../movements/domain/movement.dart';
+import '../../../features/auth/application/session_controller.dart';
 
 class AssetDetailScreen extends ConsumerStatefulWidget {
   const AssetDetailScreen({super.key, required this.assetId});
@@ -36,6 +39,8 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   Widget build(BuildContext context) {
     final asset = ref.watch(assetDetailProvider(widget.assetId));
     final notes = ref.watch(assetNotesProvider(widget.assetId));
+    final history = ref.watch(assetMovementHistoryProvider(widget.assetId));
+    final canResolve = ref.watch(currentUserProvider)?.isAdmin ?? false;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Detalle del activo', style: A2CText.title),
@@ -56,12 +61,17 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
           actionLabel: 'Reintentar',
           onAction: () => ref.invalidate(assetDetailProvider(widget.assetId)),
         ),
-        data: (value) => _content(value, notes),
+        data: (value) => _content(value, notes, history, canResolve),
       ),
     );
   }
 
-  Widget _content(Asset asset, AsyncValue<List<AssetNote>> notes) => ListView(
+  Widget _content(
+    Asset asset,
+    AsyncValue<List<AssetNote>> notes,
+    AsyncValue<List<Movement>> history,
+    bool canResolve,
+  ) => ListView(
     padding: const EdgeInsets.fromLTRB(A2CSpace.screen, 8, A2CSpace.screen, 40),
     children: [
       Text(asset.name, style: A2CText.headline.copyWith(fontSize: 30)),
@@ -84,6 +94,14 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
         subtitle: 'Distribuido en ${asset.distribution.length} ubicaciones',
         value: '${asset.totalStock}',
         unit: asset.totalStock == 1 ? 'unidad' : 'unidades',
+      ),
+      const SizedBox(height: 12),
+      OutlinedButton.icon(
+        onPressed: asset.status == 'BAJA'
+            ? null
+            : () => context.push('/inventory/assets/${asset.id}/move'),
+        icon: const Icon(Icons.swap_horiz_rounded),
+        label: const Text('Registrar movimiento'),
       ),
       if (asset.description?.isNotEmpty ?? false) ...[
         const SizedBox(height: 12),
@@ -121,6 +139,36 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
           ),
           const SizedBox(height: 8),
         ],
+      const SizedBox(height: 14),
+      const Text('Historial de movimientos', style: A2CText.title),
+      const SizedBox(height: 9),
+      ...history.when(
+        loading: () => [
+          const Center(child: CircularProgressIndicator(color: A2CColors.ink)),
+        ],
+        error: (error, _) => [
+          Text(
+            error is ApiFailure
+                ? error.message
+                : 'No se pudo cargar el historial.',
+          ),
+        ],
+        data: (items) => items.isEmpty
+            ? [
+                const Text(
+                  'Todavía no hay movimientos.',
+                  style: A2CText.caption,
+                ),
+              ]
+            : [
+                for (final item in items)
+                  _MovementCard(
+                    movement: item,
+                    canResolve: canResolve,
+                    onResolve: () => _resolveObservation(asset.id, item),
+                  ),
+              ],
+      ),
       const SizedBox(height: 14),
       const Text('Notas', style: A2CText.title),
       const SizedBox(height: 9),
@@ -192,6 +240,60 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
       if (mounted) setState(() => _saving = false);
     }
   }
+
+  Future<void> _resolveObservation(String assetId, Movement movement) async {
+    final observation = movement.observation;
+    if (observation == null || observation['status'] != 'ABIERTA') return;
+    final controller = TextEditingController();
+    final resolution = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Atender observación'),
+        content: TextField(
+          controller: controller,
+          minLines: 2,
+          maxLines: 4,
+          maxLength: 500,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: const InputDecoration(
+            hintText: 'Describe cómo se atendió',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (controller.text.trim().length < 3) return;
+              Navigator.pop(context, controller.text.trim());
+            },
+            child: const Text('Guardar resolución'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (resolution == null || !mounted) return;
+    try {
+      await ref
+          .read(movementsRepositoryProvider)
+          .resolveObservation(observation['id'] as String, resolution);
+      ref.invalidate(assetMovementHistoryProvider(assetId));
+      ref.invalidate(assetDetailProvider(assetId));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Observación atendida.')));
+      }
+    } on ApiFailure catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error.message)));
+      }
+    }
+  }
 }
 
 class _NoteCard extends StatelessWidget {
@@ -212,6 +314,66 @@ class _NoteCard extends StatelessWidget {
             '${note.userName} · ${note.createdAt.toLocal().toString().substring(0, 16)}',
             style: A2CText.caption.copyWith(color: A2CColors.inkSecondary),
           ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _MovementCard extends StatelessWidget {
+  const _MovementCard({
+    required this.movement,
+    required this.canResolve,
+    required this.onResolve,
+  });
+  final Movement movement;
+  final bool canResolve;
+  final VoidCallback onResolve;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 8),
+    child: A2CCard(
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${movement.from?.name ?? 'Ingreso'} → ${movement.to?.name ?? 'Salida'}',
+            style: A2CText.bodyStrong,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '${movement.quantity} ${movement.quantity == 1 ? 'unidad' : 'unidades'} · ${movement.userName}',
+            style: A2CText.caption,
+          ),
+          const SizedBox(height: 3),
+          Text(
+            movement.createdAt.toLocal().toString().substring(0, 16),
+            style: A2CText.caption.copyWith(color: A2CColors.inkSecondary),
+          ),
+          if (movement.note?.isNotEmpty ?? false) ...[
+            const SizedBox(height: 7),
+            Text(movement.note!, style: A2CText.body),
+          ],
+          if (movement.observation != null) ...[
+            const SizedBox(height: 7),
+            Text(
+              'Observación ${movement.observation!['type']}: ${movement.observation!['description']} · ${movement.observation!['status']}',
+              style: A2CText.caption.copyWith(color: A2CColors.goldText),
+            ),
+            if (canResolve && movement.observation!['status'] == 'ABIERTA') ...[
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: onResolve,
+                  icon: const Icon(Icons.task_alt_rounded, size: 18),
+                  label: const Text('Marcar atendida'),
+                ),
+              ),
+            ],
+          ],
         ],
       ),
     ),

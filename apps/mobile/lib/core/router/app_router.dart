@@ -8,6 +8,7 @@ import '../../features/auth/presentation/login_screen.dart';
 import '../../features/dev/component_catalog_screen.dart';
 import '../../features/assets/presentation/new_asset_screen.dart';
 import '../../features/assets/presentation/asset_detail_screen.dart';
+import '../../features/movements/presentation/create_movement_screen.dart';
 import '../../features/shell/dashboard_screen.dart';
 import '../../features/shell/home_shell.dart';
 import '../../features/shell/inventory_screen.dart';
@@ -91,6 +92,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     builder: (_, state) => AssetDetailScreen(
                       assetId: state.pathParameters['assetId']!,
                     ),
+                    routes: [
+                      GoRoute(
+                        path: 'move',
+                        builder: (_, state) {
+                          final extra = state.extra as Map<String, String>?;
+                          return CreateMovementScreen(
+                            assetId: state.pathParameters['assetId']!,
+                            initialFromSiteId: extra?['initialFromSiteId'],
+                            initialToSiteId: extra?['initialToSiteId'],
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ],
               ),

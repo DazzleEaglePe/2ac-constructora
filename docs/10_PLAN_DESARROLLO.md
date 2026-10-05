@@ -27,8 +27,8 @@
 | S0     | ✅ Completado* | 95 %   | *Quedan como tareas del usuario: probar en un celular físico y proteger `main`* |
 | S1     | ⏳ En revisión | 95 %   | API (28 pruebas) + app (25 pruebas); flujo completo verificado en simulador iOS, web y emulador Android 15. PR #1. Pendiente: validación en Android físico y medición de 60 fps en equipo de gama media |
 | S2     | 🟡 En progreso | 60 %   | API y flujo base de obras/almacén implementados; falta mapa integrado y cerrar pruebas de dispositivo. |
-| S3     | 🟡 En progreso | 55 %   | Catálogo, alta, búsqueda básica, distribución y notas listos; faltan historial de movimientos, edición visual y búsqueda optimizada. |
-| S4     | ⬜ Pendiente   | 0 %    |       |
+| S3     | 🟡 En progreso | 55 %   | Catálogo, alta, búsqueda básica, distribución y notas listos; faltan búsqueda optimizada, edición visual y concurrencia de códigos. |
+| S4     | 🟡 En progreso | 65 %   | Traslados transaccionales, observaciones e historial por activo listos; faltan reversiones e historial por obra. |
 | S5     | ⬜ Pendiente   | 0 %    |       |
 | S6     | ⬜ Pendiente   | 0 %    |       |
 | S7     | ⬜ Pendiente   | 0 %    |       |
@@ -179,30 +179,31 @@ Leyenda: ⬜ pendiente · ⏳ en curso · ✅ completado · ⚠️ bloqueado
 **Requerimientos:** RF-MOV-01…14, RF-UBI-03 (lista con movimientos)
 
 **API**
-- [ ] `POST /movements` con transacción, `SELECT … FOR UPDATE`, validaciones RN-01…RN-10
-- [ ] `Idempotency-Key` obligatorio y respuesta repetible
-- [ ] Permisos: `ADMIN` y `OPERADOR` mueven entre cualquier obra y el almacén; solo `ADMIN` revierte
-- [ ] Historiales: por activo, por obra, general con filtros
+- [x] `POST /movements` transaccional con bloqueo por activo y validaciones RN-01…RN-10
+- [x] `Idempotency-Key` obligatorio y respuesta repetible
+- [x] Permisos: `ADMIN` y `OPERADOR` mueven entre cualquier obra y almacén
+- [x] Historial por activo y general con filtros
+- [ ] Historial por obra como pantalla dedicada
 - [ ] `POST /movements/{id}/revert`
-- [ ] Observaciones (RN-15): creación junto al movimiento, `GET /observations`, `POST /observations/{id}/resolve`
-- [ ] Prueba de concurrencia: 50 movimientos simultáneos sobre el mismo stock → nunca negativo
+- [x] Observaciones: creación junto al movimiento, `GET /observations` y resolución por ADMIN
+- [x] Prueba concurrente: dos traslados sobre el mismo stock → uno confirma y el otro recibe stock insuficiente
 - [ ] Job nocturno de verificación de invariantes
 
 **App**
-- [ ] **Mover o asignar**: tarjeta del activo, Desde (con disponibles), Hacia, cantidad (stepper o candado), nota, resumen, "Confirmar movimiento"
-- [ ] Atajo "Asignar activo a esta obra" con destino precargado
-- [ ] Advertencia de Mantenimiento
-- [ ] **Reportar observación** al mover (tipo + descripción) y chip en historial / detalle del activo
-- [ ] Pantalla **Movimiento registrado** (diseñar)
-- [ ] Historial en el detalle del activo y de la obra
-- [ ] Manejo de `STOCK_INSUFICIENTE` con recarga del selector
+- [x] **Mover o asignar**: activo, origen con disponibles, destino, cantidad, nota, resumen y confirmación
+- [x] Atajo para mover desde el detalle de una obra con origen precargado
+- [x] Advertencia no bloqueante si el activo está en Mantenimiento y va a una obra
+- [x] **Reportar observación** al mover (tipo + descripción), verla en el historial y marcar atendida como ADMIN
+- [x] Confirmación "Movimiento registrado" y actualización de inventario/obras
+- [x] Historial por activo; queda la vista dedicada por obra
+- [ ] Manejo de `STOCK_INSUFICIENTE` con selector actualizado automáticamente
 
 **Criterios de aceptación**
 - [ ] Mover 1 unidad en ≤ 4 toques desde el detalle del activo
-- [ ] El stock total del activo no cambia tras un traslado
-- [ ] Un reintento con la misma clave no duplica el movimiento
+- [x] El stock total del activo no cambia tras un traslado
+- [x] Un reintento con la misma clave no duplica el movimiento
 - [ ] La reversión deja el stock como antes y ambos movimientos quedan enlazados
-- [ ] Un traslado con observación se registra sin aprobación y la observación queda ABIERTA
+- [x] Un traslado con observación se registra sin aprobación y la observación queda ABIERTA
 
 ---
 

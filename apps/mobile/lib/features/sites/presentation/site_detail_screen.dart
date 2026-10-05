@@ -208,7 +208,10 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen> {
                     message: 'El stock disponible aparecerá aquí.',
                   ),
                 ]
-              : [for (final item in filtered) _AssetStockRow(item: item)];
+              : [
+                  for (final item in filtered)
+                    _AssetStockRow(item: item, siteId: site.id),
+                ];
         },
       ),
     ],
@@ -298,14 +301,16 @@ class _LocationTag extends StatelessWidget {
 }
 
 class _AssetStockRow extends StatelessWidget {
-  const _AssetStockRow({required this.item});
+  const _AssetStockRow({required this.item, required this.siteId});
 
   final SiteStockItem item;
+  final String siteId;
 
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(bottom: 8),
     child: A2CCard(
+      onTap: () => context.push('/inventory/assets/${item.id}'),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       child: Row(
         children: [
@@ -339,6 +344,14 @@ class _AssetStockRow extends StatelessWidget {
           Text(
             '×${item.quantity}',
             style: A2CText.metric.copyWith(fontSize: 22),
+          ),
+          IconButton(
+            tooltip: 'Mover activo',
+            onPressed: () => context.push(
+              '/inventory/assets/${item.id}/move',
+              extra: {'initialFromSiteId': siteId},
+            ),
+            icon: const Icon(Icons.swap_horiz_rounded),
           ),
         ],
       ),
