@@ -174,3 +174,4 @@ Entornos: `local` (Docker Compose), `staging`, `production`. Variables por entor
 | ADR-08 | Animación del logo con **CustomPainter + AnimationController** | Lottie, Rive, video                | Sin dependencias, nítido en cualquier resolución, controla "reducir movimiento" |
 | ADR-09 | Ingreso por **DNI + contraseña** (sin correo)                | Correo / OTP SMS                     | Así lo definió el boceto; el personal de obra no siempre usa correo |
 | ADR-10 | **Dos roles (ADMIN, OPERADOR) sin permisos por obra**        | Tres roles con acceso por obra       | Decisión de A2C: el operador ejecuta los traslados sin aprobación y reporta observaciones; el administrador administra y supervisa |
+| ADR-11 | **Repositorios Dio escritos a mano** (sin cliente generado) | Cliente Dart generado desde OpenAPI | La API es pequeña; el código generado añadía un paso de build sin beneficio. Se reevalúa si supera ~30 endpoints |

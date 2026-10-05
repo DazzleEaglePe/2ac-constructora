@@ -66,6 +66,13 @@ abstract final class A2CTheme {
           borderSide: const BorderSide(color: A2CColors.error),
         ),
       ),
+      // Texto amarillo sobre blanco no se lee: los botones de texto van en negro (docs/09 §3).
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: A2CColors.ink,
+          textStyle: A2CText.bodyStrong,
+        ),
+      ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: A2CColors.ink,
         contentTextStyle: A2CText.bodyStrong.copyWith(color: A2CColors.onInk),

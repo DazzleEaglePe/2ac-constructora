@@ -25,7 +25,7 @@
 | Sprint | Estado        | Avance | Notas |
 | ------ | ------------- | ------ | ----- |
 | S0     | ✅ Completado* | 95 %   | *Quedan como tareas del usuario: aceptar licencias Android y probar en un celular físico; proteger `main` |
-| S1     | ⏳ En curso    | 45 %   | API de auth y usuarios lista (28 pruebas). Sigue: app Flutter |
+| S1     | ⏳ En revisión | 95 %   | API (28 pruebas) + app (25 pruebas), flujo verificado en iOS y web. PR #1. Falta: prueba en Android |
 | S2     | ⬜ Pendiente   | 0 %    |       |
 | S3     | ⬜ Pendiente   | 0 %    |       |
 | S4     | ⬜ Pendiente   | 0 %    |       |
@@ -91,7 +91,7 @@ Leyenda: ⬜ pendiente · ⏳ en curso · ✅ completado · ⚠️ bloqueado
 **Requerimientos:** RF-BIE-01…05, RF-AUT-01…06, RF-USR-01…05, RF-USR-07
 
 **Arrastrado de S0**
-- [ ] Cliente API Dart generado desde `openapi.yaml` en `packages/api_client`
+- [x] ~~Cliente API generado~~ → **reemplazado por repositorios Dio escritos a mano** con manejo de `problem+json` (ADR-11)
 
 **API**
 - [x] `POST /auth/login` con Argon2id, bloqueo por intentos y tiempo constante
@@ -103,24 +103,24 @@ Leyenda: ⬜ pendiente · ⏳ en curso · ✅ completado · ⚠️ bloqueado
 - [x] Pruebas e2e de auth y usuarios (casos de bloqueo, desactivado, temporal)
 
 **App**
-- [ ] **Splash animado** `A2CSplashAnimation` (CustomPainter, 6,5 s, cortes de fondo, viga, franja, revelado de CONSTRUCTORA) según `09` §8
-- [ ] Soporte de "reducir movimiento" en el splash
-- [ ] **Onboarding de 3 pasos** con tarjetas flotantes, puntos tocables, "Saltar" y CTA amarillo
-- [ ] Persistir "onboarding visto"
-- [ ] **Ingreso** (hero con edificios, franja, ícono A2C, hoja con DNI y contraseña, beneficios)
-- [ ] Cambio de contraseña temporal (diseñar pantalla)
-- [ ] Gestión de sesión: secure storage, interceptor de refresh, cierre de sesión
-- [ ] Guardas de `go_router` (sin sesión → login; temporal → cambio de contraseña)
-- [ ] Pantalla **Usuarios** (lista, alta en línea, edición, desactivar, restablecer) solo para admin
-- [ ] Panel con barra de navegación (3 destinos admin / 2 operador) y estado vacío
-- [ ] Utilidad `can(Permission)` para ocultar acciones de admin al operador
+- [x] **Splash animado** `A2CSplashAnimation` (CustomPainter, 6,5 s, cortes de fondo, viga, franja, revelado de CONSTRUCTORA) según `09` §8
+- [x] Soporte de "reducir movimiento" en el splash
+- [x] **Onboarding de 3 pasos** con tarjetas flotantes, puntos tocables, "Saltar" y CTA amarillo
+- [x] Persistir "onboarding visto"
+- [x] **Ingreso** (hero con edificios, franja, ícono A2C, hoja con DNI y contraseña, beneficios)
+- [x] Cambio de contraseña temporal (diseñar pantalla)
+- [x] Gestión de sesión: secure storage, interceptor de refresh, cierre de sesión
+- [x] Guardas de `go_router` (sin sesión → login; temporal → cambio de contraseña)
+- [x] Pantalla **Usuarios** (lista, alta en línea, edición, desactivar, restablecer) solo para admin
+- [x] Panel con barra de navegación (3 destinos admin / 2 operador) y estado vacío
+- [x] Ocultar acciones de admin al operador (barra con 2 destinos y guarda de `/users`; `can(Permission)` se generaliza en S3)
 
 **Criterios de aceptación**
-- [ ] Primer uso: splash → onboarding → ingreso → cambio de contraseña → panel
-- [ ] Usos siguientes: splash breve → panel sin pedir credenciales
-- [ ] 5 intentos fallidos bloquean la cuenta 15 min con mensaje claro
-- [ ] Un usuario desactivado pierde la sesión en ≤ 15 min (o al instante con WS en S5)
-- [ ] El splash corre a 60 fps en un Android de gama media
+- [x] Primer uso: splash → onboarding → ingreso → cambio de contraseña → panel
+- [x] Usos siguientes: splash breve → panel sin pedir credenciales
+- [x] 5 intentos fallidos bloquean la cuenta 15 min con mensaje claro
+- [x] Un usuario desactivado pierde la sesión en ≤ 15 min (o al instante con WS en S5)
+- [ ] El splash corre a 60 fps en un Android de gama media — *verificado en simulador iOS y web; falta Android (licencias del SDK)*
 
 ---
 
