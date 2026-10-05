@@ -146,6 +146,10 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
       const SizedBox(height: 22),
       const Text('Distribución', style: A2CText.title),
       const SizedBox(height: 10),
+      if (asset.distribution.isNotEmpty) ...[
+        _DistributionBar(distribution: asset.distribution),
+        const SizedBox(height: 9),
+      ],
       if (asset.distribution.isEmpty)
         const EmptyState(
           icon: Icons.location_off_outlined,
@@ -548,6 +552,66 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
             .showSnackBar(SnackBar(content: Text(error.message)));
       }
     }
+  }
+}
+
+class _DistributionBar extends StatelessWidget {
+  const _DistributionBar({required this.distribution});
+  final List<AssetDistribution> distribution;
+
+  @override
+  Widget build(BuildContext context) {
+    const colors = A2CColors.chartSeries;
+    final total = distribution.fold<int>(0, (sum, item) => sum + item.quantity);
+    return A2CCard(
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: SizedBox(
+              height: 12,
+              child: Row(
+                children: [
+                  for (var i = 0; i < distribution.length; i++)
+                    Expanded(
+                      flex: distribution[i].quantity,
+                      child: ColoredBox(color: colors[i % colors.length]),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 13),
+          for (var i = 0; i < distribution.length; i++) ...[
+            if (i > 0) const SizedBox(height: 8),
+            Row(
+              children: [
+                Container(
+                  width: 9,
+                  height: 9,
+                  decoration: BoxDecoration(
+                    color: colors[i % colors.length],
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(distribution[i].siteName, style: A2CText.caption),
+                ),
+                Text(
+                  '${(distribution[i].quantity * 100 / total).round()}%',
+                  style: A2CText.caption.copyWith(
+                    color: A2CColors.inkSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }
 
