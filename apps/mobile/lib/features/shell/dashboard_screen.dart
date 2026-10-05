@@ -7,10 +7,14 @@ import '../../core/theme/a2c_colors.dart';
 import '../../core/theme/a2c_dimens.dart';
 import '../../core/theme/a2c_typography.dart';
 import '../../features/auth/application/session_controller.dart';
-import '../../features/sites/data/sites_repository.dart';
+import '../../features/dashboard/data/dashboard_repository.dart';
+import '../../features/dashboard/domain/dashboard_data.dart';
+import '../../features/movements/data/movements_repository.dart';
+import '../../features/movements/domain/movement.dart';
 import '../../features/sites/domain/site.dart';
 import '../../shared/widgets/a2c_buttons.dart';
 import '../../shared/widgets/empty_state.dart';
+import '../../shared/widgets/a2c_cards.dart';
 import '../auth/domain/app_user.dart';
 
 /// Panel de obras con resumen del almacén central y accesos al detalle.
@@ -20,7 +24,7 @@ class DashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentUserProvider);
-    final sites = ref.watch(sitesListProvider);
+    final dashboard = ref.watch(dashboardProvider);
     final firstName = user?.fullName.split(' ').first ?? '';
     final hour = DateTime.now().hour;
     final greeting = hour < 12
@@ -32,7 +36,7 @@ class DashboardScreen extends ConsumerWidget {
         bottom: false,
         child: RefreshIndicator(
           color: A2CColors.ink,
-          onRefresh: () => ref.refresh(sitesListProvider.future),
+          onRefresh: () => ref.refresh(dashboardProvider.future),
           child: ListView(
             padding: const EdgeInsets.fromLTRB(
               A2CSpace.screen,
@@ -99,20 +103,30 @@ class DashboardScreen extends ConsumerWidget {
                     ),
                   ),
                   if (user?.isAdmin ?? false)
-                    IconButton.filled(
-                      tooltip: 'Nueva obra',
-                      onPressed: () => context.push('/sites/new'),
-                      icon: const Icon(Icons.add_rounded),
-                      style: IconButton.styleFrom(
-                        backgroundColor: A2CColors.brandYellow,
-                        foregroundColor: A2CColors.ink,
-                        fixedSize: const Size(52, 52),
-                      ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          tooltip: 'Auditoría',
+                          onPressed: () => context.push('/audit'),
+                          icon: const Icon(Icons.history_rounded),
+                        ),
+                        IconButton.filled(
+                          tooltip: 'Nueva obra',
+                          onPressed: () => context.push('/sites/new'),
+                          icon: const Icon(Icons.add_rounded),
+                          style: IconButton.styleFrom(
+                            backgroundColor: A2CColors.brandYellow,
+                            foregroundColor: A2CColors.ink,
+                            fixedSize: const Size(52, 52),
+                          ),
+                        ),
+                      ],
                     ),
                 ],
               ),
               const SizedBox(height: 20),
-              ...sites.when(
+              ...dashboard.when(
                 loading: () => [
                   const Center(
                     child: Padding(
@@ -129,10 +143,21 @@ class DashboardScreen extends ConsumerWidget {
                         ? error.message
                         : 'Revisa la conexión e inténtalo de nuevo.',
                     actionLabel: 'Reintentar',
-                    onAction: () => ref.invalidate(sitesListProvider),
+                    onAction: () => ref.invalidate(dashboardProvider),
                   ),
                 ],
-                data: (list) => _siteList(context, list, user),
+                data: (data) => [
+                  _DashboardMetrics(totals: data.totals),
+                  if (user?.isAdmin ?? false) ...[
+                    const SizedBox(height: 18),
+                    const _OpenObservations(),
+                  ],
+                  const SizedBox(height: 18),
+                  ..._siteList(context, [
+                    ...data.sites,
+                    if (data.warehouse != null) data.warehouse!,
+                  ], user),
+                ],
               ),
             ],
           ),
@@ -186,6 +211,233 @@ class DashboardScreen extends ConsumerWidget {
       ],
     ];
   }
+}
+
+class _DashboardMetrics extends StatelessWidget {
+  const _DashboardMetrics({required this.totals});
+
+  final DashboardTotals totals;
+
+  @override
+  Widget build(BuildContext context) => Wrap(
+    spacing: 9,
+    runSpacing: 9,
+    children: [
+      _MetricTile(
+        label: 'En obras',
+        value: '${totals.unitsOnSites}',
+        icon: Icons.apartment_rounded,
+      ),
+      _MetricTile(
+        label: 'Almacén',
+        value: '${totals.warehouseUnits}',
+        icon: Icons.warehouse_outlined,
+      ),
+      _MetricTile(
+        label: 'Obras activas',
+        value: '${totals.activeSites}',
+        icon: Icons.location_on_outlined,
+      ),
+      _MetricTile(
+        label: 'Mantenimiento',
+        value: '${totals.assetsInMaintenance}',
+        icon: Icons.build_circle_outlined,
+      ),
+    ],
+  );
+}
+
+class _MetricTile extends StatelessWidget {
+  const _MetricTile({
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
+
+  final String label;
+  final String value;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: (MediaQuery.sizeOf(context).width - A2CSpace.screen * 2 - 9) / 2,
+    child: Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: A2CColors.surface,
+        border: Border.all(color: A2CColors.border),
+        borderRadius: BorderRadius.circular(A2CRadii.md),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 19, color: A2CColors.inkSecondary),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(value, style: A2CText.bodyStrong.copyWith(fontSize: 20)),
+                Text(
+                  label,
+                  style: A2CText.caption,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _OpenObservations extends ConsumerWidget {
+  const _OpenObservations();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final observations = ref.watch(openObservationsProvider);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Observaciones abiertas', style: A2CText.title),
+        const SizedBox(height: 9),
+        ...observations.when(
+          loading: () => [
+            const Padding(
+              padding: EdgeInsets.all(18),
+              child: Center(
+                child: CircularProgressIndicator(color: A2CColors.ink),
+              ),
+            ),
+          ],
+          error: (error, _) => [
+            EmptyState(
+              icon: Icons.cloud_off_rounded,
+              title: 'No se pudieron cargar las observaciones',
+              message: error is ApiFailure
+                  ? error.message
+                  : 'Inténtalo de nuevo.',
+              actionLabel: 'Reintentar',
+              onAction: () => ref.invalidate(openObservationsProvider),
+            ),
+          ],
+          data: (items) => items.isEmpty
+              ? [
+                  const EmptyState(
+                    icon: Icons.task_alt_rounded,
+                    title: 'Todo atendido',
+                    message: 'No hay observaciones pendientes.',
+                  ),
+                ]
+              : [
+                  for (final item in items.take(4))
+                    _ObservationCard(
+                      observation: item,
+                      onResolve: () => _resolve(context, ref, item),
+                    ),
+                ],
+        ),
+      ],
+    );
+  }
+
+  Future<void> _resolve(
+    BuildContext context,
+    WidgetRef ref,
+    OpenObservation item,
+  ) async {
+    final controller = TextEditingController();
+    final resolution = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Atender observación'),
+        content: TextField(
+          controller: controller,
+          minLines: 2,
+          maxLines: 4,
+          maxLength: 500,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: const InputDecoration(
+            hintText: 'Describe cómo se atendió',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (controller.text.trim().length >= 3) {
+                Navigator.pop(context, controller.text.trim());
+              }
+            },
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (resolution == null) return;
+    try {
+      await ref
+          .read(movementsRepositoryProvider)
+          .resolveObservation(item.id, resolution);
+      ref.invalidate(openObservationsProvider);
+      ref.invalidate(dashboardProvider);
+      ref.invalidate(assetMovementHistoryProvider(item.assetId));
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Observación atendida.')));
+      }
+    } on ApiFailure catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error.message)));
+      }
+    }
+  }
+}
+
+class _ObservationCard extends StatelessWidget {
+  const _ObservationCard({required this.observation, required this.onResolve});
+  final OpenObservation observation;
+  final VoidCallback onResolve;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 8),
+    child: A2CCard(
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${observation.assetName} · ${observation.type}',
+            style: A2CText.bodyStrong,
+          ),
+          const SizedBox(height: 4),
+          Text(observation.description, style: A2CText.body),
+          const SizedBox(height: 4),
+          Text(
+            '${observation.fromName ?? 'Ingreso'} → ${observation.toName ?? 'Salida'}',
+            style: A2CText.caption,
+          ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: onResolve,
+              icon: const Icon(Icons.task_alt_rounded, size: 18),
+              label: const Text('Marcar atendida'),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 class _SiteCard extends StatelessWidget {

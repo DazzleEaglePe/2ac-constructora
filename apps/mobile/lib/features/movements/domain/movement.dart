@@ -49,3 +49,42 @@ class Movement {
     observation: json['observation'] as Map<String, dynamic>?,
   );
 }
+
+class OpenObservation {
+  const OpenObservation({
+    required this.id,
+    required this.assetId,
+    required this.assetName,
+    required this.type,
+    required this.description,
+    required this.fromName,
+    required this.toName,
+    required this.createdAt,
+  });
+
+  final String id;
+  final String assetId;
+  final String assetName;
+  final String type;
+  final String description;
+  final String? fromName;
+  final String? toName;
+  final DateTime createdAt;
+
+  factory OpenObservation.fromJson(Map<String, dynamic> json) {
+    final asset = json['asset'] as Map<String, dynamic>;
+    final movement = json['movement'] as Map<String, dynamic>;
+    final from = movement['fromSite'] as Map<String, dynamic>?;
+    final to = movement['toSite'] as Map<String, dynamic>?;
+    return OpenObservation(
+      id: json['id'] as String,
+      assetId: asset['id'] as String,
+      assetName: asset['name'] as String,
+      type: json['type'] as String,
+      description: json['description'] as String,
+      fromName: from?['name'] as String?,
+      toName: to?['name'] as String?,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+    );
+  }
+}

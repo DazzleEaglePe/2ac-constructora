@@ -1,5 +1,46 @@
 openapi: 3.0.0
 paths:
+  /api/v1/audit-logs:
+    get:
+      operationId: AuditLogsController_list
+      parameters:
+        - name: userId
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: action
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: entityType
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: from
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: to
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: cursor
+          required: false
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      security:
+        - bearer: []
+      tags:
+        - audit-logs
   /api/v1/auth/login:
     post:
       operationId: AuthController_login
@@ -658,6 +699,23 @@ paths:
         - bearer: []
       tags:
         - observations
+  /api/v1/dashboard:
+    get:
+      operationId: DashboardController_get
+      parameters:
+        - name: since
+          required: false
+          in: query
+          description: Fecha desde la última sincronización
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      security:
+        - bearer: []
+      tags:
+        - dashboard
   /health/live:
     get:
       operationId: HealthController_live

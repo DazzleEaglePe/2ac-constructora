@@ -66,6 +66,16 @@ class MovementsRepository {
       options: Options(headers: {'Idempotency-Key': _uuidV4()}),
     );
   });
+
+  Future<List<OpenObservation>> openObservations() => guardApi(() async {
+    final response = await _dio.get<List<dynamic>>(
+      '/observations',
+      queryParameters: {'status': 'ABIERTA'},
+    );
+    return (response.data ?? const [])
+        .map((row) => OpenObservation.fromJson(row as Map<String, dynamic>))
+        .toList(growable: false);
+  });
 }
 
 String _uuidV4() {
@@ -94,3 +104,7 @@ final siteMovementHistoryProvider = FutureProvider.autoDispose
       (ref, siteId) =>
           ref.watch(movementsRepositoryProvider).history(siteId: siteId),
     );
+
+final openObservationsProvider = FutureProvider.autoDispose<List<OpenObservation>>(
+  (ref) => ref.watch(movementsRepositoryProvider).openObservations(),
+);

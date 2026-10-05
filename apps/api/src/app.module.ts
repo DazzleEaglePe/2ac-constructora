@@ -12,6 +12,7 @@ import { UsersModule } from './modules/users/users.module';
 import { SitesModule } from './modules/sites/sites.module';
 import { AssetsModule } from './modules/assets/assets.module';
 import { MovementsModule } from './modules/movements/movements.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { RedisModule } from './redis/redis.module';
 
@@ -47,6 +48,7 @@ import { RedisModule } from './redis/redis.module';
     SitesModule,
     AssetsModule,
     MovementsModule,
+    DashboardModule,
     HealthModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

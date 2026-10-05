@@ -29,7 +29,7 @@
 | S2     | 🟡 En progreso | 60 %   | API y flujo base de obras/almacén implementados; falta mapa integrado y cerrar pruebas de dispositivo. |
 | S3     | 🟡 En progreso | 55 %   | Catálogo, alta, búsqueda básica, distribución y notas listos; faltan búsqueda optimizada, edición visual y concurrencia de códigos. |
 | S4     | 🟡 En progreso | 85 %   | Traslados, reversiones, observaciones e historial por activo/obra listos; faltan tareas operativas y revisión final. |
-| S5     | ⬜ Pendiente   | 0 %    |       |
+| S5     | 🟡 En progreso | 45 %   | Resumen, observaciones abiertas y consulta de auditoría para ADMIN listos; falta tiempo real. |
 | S6     | ⬜ Pendiente   | 0 %    |       |
 | S7     | ⬜ Pendiente   | 0 %    |       |
 
@@ -213,24 +213,25 @@ Leyenda: ⬜ pendiente · ⏳ en curso · ✅ completado · ⚠️ bloqueado
 **Requerimientos:** RF-PAN-01…07, RF-AUD-01, RF-AUD-02
 
 **API**
-- [ ] `GET /dashboard` con totales y resúmenes
+- [x] `GET /dashboard` con totales, obras, almacén y marca `changedSince`
 - [ ] Gateway Socket.IO con autenticación en el handshake y salas
 - [ ] Emisión de eventos tras `COMMIT` (`movement.created`, `stock.updated`, `site.updated`, `asset.updated`, `session.revoked`)
 - [ ] Adaptador Redis para varias instancias
-- [ ] `GET /audit-logs`
+- [x] `GET /audit-logs` con filtros, cursor y acceso solo ADMIN
 
 **App**
-- [ ] **Panel**: avatar, indicador "En vivo", hero "Tu inventario, en tiempo real", buscador, accesos rápidos, tarjetas de métrica, obras, almacén (tarjeta negra)
+- [ ] **Panel**: tarjetas de métrica, obras, almacén y observaciones abiertas listos; faltan avatar, indicador "En vivo", hero, buscador y accesos rápidos
 - [ ] Cliente WebSocket con reconexión exponencial y *resync*
 - [ ] Destello de tarjetas actualizadas
-- [ ] Deslizar para refrescar
+- [x] Deslizar para refrescar el panel
 - [ ] Cierre de sesión forzado al recibir `session.revoked`
-- [ ] Sección **Observaciones abiertas** en el panel del administrador, con "Marcar como atendida"
+- [x] Sección **Observaciones abiertas** en el panel del administrador, con "Marcar como atendida"
+- [x] Pantalla ADMIN de auditoría con filtro por acción y paginación
 
 **Criterios de aceptación**
 - [ ] Un movimiento en el celular A aparece en el panel del celular B en ≤ 2 s
 - [ ] Tras perder y recuperar la red, el panel queda consistente sin recargar a mano
-- [ ] Las acciones administrativas aparecen en la auditoría
+- [x] Las acciones administrativas aparecen en la auditoría consultable por ADMIN
 
 ---
 

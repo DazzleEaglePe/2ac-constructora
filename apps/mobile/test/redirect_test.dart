@@ -111,6 +111,25 @@ void main() {
       );
     });
 
+    test('Auditoría es solo para administradores', () {
+      expect(
+        appRedirect(
+          session: SessionSignedIn(_user()),
+          onboardingSeen: true,
+          location: '/audit',
+        ),
+        '/',
+      );
+      expect(
+        appRedirect(
+          session: SessionSignedIn(_user(role: Role.admin)),
+          onboardingSeen: true,
+          location: '/audit',
+        ),
+        isNull,
+      );
+    });
+
     test('destino del splash', () {
       expect(
         routeAfterSplash(

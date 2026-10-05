@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/application/session_controller.dart';
 import '../../features/auth/presentation/change_password_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
+import '../../features/audit/presentation/audit_logs_screen.dart';
 import '../../features/dev/component_catalog_screen.dart';
 import '../../features/assets/presentation/new_asset_screen.dart';
 import '../../features/assets/presentation/asset_detail_screen.dart';
@@ -56,6 +57,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 path: '/',
                 builder: (_, _) => const DashboardScreen(),
                 routes: [
+                  GoRoute(
+                    path: 'audit',
+                    builder: (_, _) => const AuditLogsScreen(),
+                  ),
                   GoRoute(
                     path: 'sites/new',
                     builder: (_, _) => const NewSiteScreen(),
