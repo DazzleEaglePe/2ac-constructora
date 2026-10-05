@@ -28,7 +28,7 @@
 | S1     | ⏳ En revisión | 95 %   | API (28 pruebas) + app (25 pruebas); flujo completo verificado en simulador iOS, web y emulador Android 15. PR #1. Pendiente: validación en Android físico y medición de 60 fps en equipo de gama media |
 | S2     | 🟡 En progreso | 60 %   | API y flujo base de obras/almacén implementados; falta mapa integrado y cerrar pruebas de dispositivo. |
 | S3     | 🟡 En progreso | 55 %   | Catálogo, alta, búsqueda básica, distribución y notas listos; faltan búsqueda optimizada, edición visual y concurrencia de códigos. |
-| S4     | 🟡 En progreso | 65 %   | Traslados transaccionales, observaciones e historial por activo listos; faltan reversiones e historial por obra. |
+| S4     | 🟡 En progreso | 85 %   | Traslados, reversiones, observaciones e historial por activo/obra listos; faltan tareas operativas y revisión final. |
 | S5     | ⬜ Pendiente   | 0 %    |       |
 | S6     | ⬜ Pendiente   | 0 %    |       |
 | S7     | ⬜ Pendiente   | 0 %    |       |
@@ -183,8 +183,8 @@ Leyenda: ⬜ pendiente · ⏳ en curso · ✅ completado · ⚠️ bloqueado
 - [x] `Idempotency-Key` obligatorio y respuesta repetible
 - [x] Permisos: `ADMIN` y `OPERADOR` mueven entre cualquier obra y almacén
 - [x] Historial por activo y general con filtros
-- [ ] Historial por obra como pantalla dedicada
-- [ ] `POST /movements/{id}/revert`
+- [x] Historial filtrable por ubicación; la app muestra actividad reciente en la ficha de obra
+- [x] `POST /movements/{id}/revert` solo ADMIN, creando el inverso sin modificar el historial original
 - [x] Observaciones: creación junto al movimiento, `GET /observations` y resolución por ADMIN
 - [x] Prueba concurrente: dos traslados sobre el mismo stock → uno confirma y el otro recibe stock insuficiente
 - [ ] Job nocturno de verificación de invariantes
@@ -195,14 +195,15 @@ Leyenda: ⬜ pendiente · ⏳ en curso · ✅ completado · ⚠️ bloqueado
 - [x] Advertencia no bloqueante si el activo está en Mantenimiento y va a una obra
 - [x] **Reportar observación** al mover (tipo + descripción), verla en el historial y marcar atendida como ADMIN
 - [x] Confirmación "Movimiento registrado" y actualización de inventario/obras
-- [x] Historial por activo; queda la vista dedicada por obra
-- [ ] Manejo de `STOCK_INSUFICIENTE` con selector actualizado automáticamente
+- [x] Historial por activo y por obra
+- [x] Reversión desde el historial del activo, solo para ADMIN
+- [x] Manejo de `STOCK_INSUFICIENTE` con recarga de la disponibilidad
 
 **Criterios de aceptación**
-- [ ] Mover 1 unidad en ≤ 4 toques desde el detalle del activo
+- [x] Mover 1 unidad en ≤ 4 toques desde el detalle del activo
 - [x] El stock total del activo no cambia tras un traslado
 - [x] Un reintento con la misma clave no duplica el movimiento
-- [ ] La reversión deja el stock como antes y ambos movimientos quedan enlazados
+- [x] La reversión deja el stock como antes y ambos movimientos quedan enlazados
 - [x] Un traslado con observación se registra sin aprobación y la observación queda ABIERTA
 
 ---

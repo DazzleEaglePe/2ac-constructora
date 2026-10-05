@@ -17,7 +17,8 @@ export type AuditAction =
   | 'ASSET_UPDATED'
   | 'ASSET_STATUS_CHANGED'
   | 'ASSET_NOTE_ADDED'
-  | 'OBSERVATION_RESOLVED';
+  | 'OBSERVATION_RESOLVED'
+  | 'MOVEMENT_REVERTED';
 
 export interface AuditEntry {
   userId: string;

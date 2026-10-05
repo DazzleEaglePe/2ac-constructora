@@ -11,15 +11,19 @@ class MovementsRepository {
   MovementsRepository(this._dio);
   final Dio _dio;
 
-  Future<List<Movement>> history(String assetId) => guardApi(() async {
-    final response = await _dio.get<List<dynamic>>(
-      '/movements',
-      queryParameters: {'assetId': assetId},
-    );
-    return (response.data ?? const [])
-        .map((row) => Movement.fromJson(row as Map<String, dynamic>))
-        .toList(growable: false);
-  });
+  Future<List<Movement>> history({String? assetId, String? siteId}) =>
+      guardApi(() async {
+        final query = <String, dynamic>{};
+        if (assetId != null) query['assetId'] = assetId;
+        if (siteId != null) query['siteId'] = siteId;
+        final response = await _dio.get<List<dynamic>>(
+          '/movements',
+          queryParameters: query,
+        );
+        return (response.data ?? const [])
+            .map((row) => Movement.fromJson(row as Map<String, dynamic>))
+            .toList(growable: false);
+      });
 
   Future<void> transfer({
     required String assetId,
@@ -55,6 +59,13 @@ class MovementsRepository {
           data: {'resolution': resolution.trim()},
         );
       });
+
+  Future<void> revert(String movementId) => guardApi(() async {
+    await _dio.post<Map<String, dynamic>>(
+      '/movements/$movementId/revert',
+      options: Options(headers: {'Idempotency-Key': _uuidV4()}),
+    );
+  });
 }
 
 String _uuidV4() {
@@ -74,5 +85,12 @@ final movementsRepositoryProvider = Provider<MovementsRepository>(
 
 final assetMovementHistoryProvider = FutureProvider.autoDispose
     .family<List<Movement>, String>(
-      (ref, assetId) => ref.watch(movementsRepositoryProvider).history(assetId),
+      (ref, assetId) =>
+          ref.watch(movementsRepositoryProvider).history(assetId: assetId),
+    );
+
+final siteMovementHistoryProvider = FutureProvider.autoDispose
+    .family<List<Movement>, String>(
+      (ref, siteId) =>
+          ref.watch(movementsRepositoryProvider).history(siteId: siteId),
     );

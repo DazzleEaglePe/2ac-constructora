@@ -596,6 +596,22 @@ paths:
         - bearer: []
       tags:
         - movements
+  /api/v1/movements/{id}/revert:
+    post:
+      operationId: MovementsController_revert
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "201":
+          description: ""
+      security:
+        - bearer: []
+      tags:
+        - movements
   /api/v1/observations:
     get:
       operationId: ObservationsController_list

@@ -10,6 +10,7 @@ class MovementSite {
 class Movement {
   const Movement({
     required this.id,
+    required this.revertsId,
     required this.kind,
     required this.quantity,
     required this.from,
@@ -21,6 +22,7 @@ class Movement {
   });
 
   final String id;
+  final String? revertsId;
   final String kind;
   final int quantity;
   final MovementSite? from;
@@ -32,6 +34,7 @@ class Movement {
 
   factory Movement.fromJson(Map<String, dynamic> json) => Movement(
     id: json['id'] as String,
+    revertsId: json['revertsId'] as String?,
     kind: json['kind'] as String,
     quantity: (json['quantity'] as num).toInt(),
     from: json['fromSite'] == null

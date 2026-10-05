@@ -15,6 +15,8 @@ import '../../auth/application/session_controller.dart';
 import '../data/sites_repository.dart';
 import '../domain/site.dart';
 import 'maps_launcher.dart';
+import '../../movements/data/movements_repository.dart';
+import '../../movements/domain/movement.dart';
 
 class SiteDetailScreen extends ConsumerStatefulWidget {
   const SiteDetailScreen({super.key, required this.siteId});
@@ -33,6 +35,7 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen> {
   Widget build(BuildContext context) {
     final site = ref.watch(siteDetailProvider(widget.siteId));
     final stock = ref.watch(siteStockProvider(widget.siteId));
+    final history = ref.watch(siteMovementHistoryProvider(widget.siteId));
     final canManage = ref.watch(currentUserProvider)?.isAdmin ?? false;
     return Scaffold(
       appBar: AppBar(
@@ -69,7 +72,8 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen> {
           actionLabel: 'Reintentar',
           onAction: () => ref.invalidate(siteDetailProvider(widget.siteId)),
         ),
-        data: (value) => _buildDetail(context, value, stock, canManage),
+        data: (value) =>
+            _buildDetail(context, value, stock, history, canManage),
       ),
     );
   }
@@ -78,6 +82,7 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen> {
     BuildContext context,
     Site site,
     AsyncValue<List<SiteStockItem>> stock,
+    AsyncValue<List<Movement>> history,
     bool canManage,
   ) => ListView(
     padding: const EdgeInsets.fromLTRB(A2CSpace.screen, 8, A2CSpace.screen, 32),
@@ -214,6 +219,37 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen> {
                 ];
         },
       ),
+      const SizedBox(height: 18),
+      const Text('Actividad reciente', style: A2CText.title),
+      const SizedBox(height: 9),
+      ...history.when(
+        loading: () => [
+          const Center(child: CircularProgressIndicator(color: A2CColors.ink)),
+        ],
+        error: (error, _) => [
+          EmptyState(
+            icon: Icons.cloud_off_rounded,
+            title: 'No se pudo cargar la actividad',
+            message: error is ApiFailure
+                ? error.message
+                : 'Inténtalo de nuevo.',
+            actionLabel: 'Reintentar',
+            onAction: () =>
+                ref.invalidate(siteMovementHistoryProvider(site.id)),
+          ),
+        ],
+        data: (items) => items.isEmpty
+            ? [
+                const Text(
+                  'Todavía no hay movimientos.',
+                  style: A2CText.caption,
+                ),
+              ]
+            : [
+                for (final movement in items.take(8))
+                  _SiteMovementCard(movement: movement),
+              ],
+      ),
     ],
   );
 
@@ -281,6 +317,48 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen> {
       if (mounted) setState(() => _changingStatus = false);
     }
   }
+}
+
+class _SiteMovementCard extends StatelessWidget {
+  const _SiteMovementCard({required this.movement});
+  final Movement movement;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 8),
+    child: A2CCard(
+      padding: const EdgeInsets.all(13),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${movement.from?.name ?? 'Ingreso'} → ${movement.to?.name ?? 'Salida'}',
+            style: A2CText.bodyStrong,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '${movement.quantity} ${movement.quantity == 1 ? 'unidad' : 'unidades'} · ${movement.userName}',
+            style: A2CText.caption,
+          ),
+          Text(
+            movement.createdAt.toLocal().toString().substring(0, 16),
+            style: A2CText.caption.copyWith(color: A2CColors.inkSecondary),
+          ),
+          if (movement.note?.isNotEmpty ?? false) ...[
+            const SizedBox(height: 5),
+            Text(movement.note!, style: A2CText.caption),
+          ],
+          if (movement.observation != null) ...[
+            const SizedBox(height: 5),
+            Text(
+              'Observación ${movement.observation!['type']} · ${movement.observation!['status']}',
+              style: A2CText.caption.copyWith(color: A2CColors.goldText),
+            ),
+          ],
+        ],
+      ),
+    ),
+  );
 }
 
 class _LocationTag extends StatelessWidget {

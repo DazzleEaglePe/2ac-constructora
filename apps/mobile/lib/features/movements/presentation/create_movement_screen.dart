@@ -364,6 +364,8 @@ class _CreateMovementScreenState extends ConsumerState<CreateMovementScreen> {
       ref.invalidate(siteDetailProvider(_toSiteId!));
       ref.invalidate(siteStockProvider(_fromSiteId!));
       ref.invalidate(siteStockProvider(_toSiteId!));
+      ref.invalidate(siteMovementHistoryProvider(_fromSiteId!));
+      ref.invalidate(siteMovementHistoryProvider(_toSiteId!));
       if (mounted) {
         ScaffoldMessenger.of(
           context,
@@ -371,6 +373,9 @@ class _CreateMovementScreenState extends ConsumerState<CreateMovementScreen> {
         context.pop(true);
       }
     } on ApiFailure catch (error) {
+      if (error.code == 'STOCK_INSUFICIENTE') {
+        ref.invalidate(assetDetailProvider(widget.assetId));
+      }
       if (mounted) setState(() => _error = error);
     } finally {
       if (mounted) setState(() => _sending = false);

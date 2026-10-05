@@ -15,6 +15,7 @@ import '../domain/asset.dart';
 import '../../movements/data/movements_repository.dart';
 import '../../movements/domain/movement.dart';
 import '../../../features/auth/application/session_controller.dart';
+import '../../sites/data/sites_repository.dart';
 
 class AssetDetailScreen extends ConsumerStatefulWidget {
   const AssetDetailScreen({super.key, required this.assetId});
@@ -153,21 +154,30 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                 : 'No se pudo cargar el historial.',
           ),
         ],
-        data: (items) => items.isEmpty
-            ? [
-                const Text(
-                  'Todavía no hay movimientos.',
-                  style: A2CText.caption,
-                ),
-              ]
-            : [
-                for (final item in items)
-                  _MovementCard(
-                    movement: item,
-                    canResolve: canResolve,
-                    onResolve: () => _resolveObservation(asset.id, item),
+        data: (items) {
+          final reversedIds = items
+              .map((item) => item.revertsId)
+              .whereType<String>()
+              .toSet();
+          return items.isEmpty
+              ? [
+                  const Text(
+                    'Todavía no hay movimientos.',
+                    style: A2CText.caption,
                   ),
-              ],
+                ]
+              : [
+                  for (final item in items)
+                    _MovementCard(
+                      movement: item,
+                      canResolve: canResolve,
+                      canRevert: canResolve,
+                      isReverted: reversedIds.contains(item.id),
+                      onResolve: () => _resolveObservation(asset.id, item),
+                      onRevert: () => _revertMovement(asset.id, item),
+                    ),
+                ];
+        },
       ),
       const SizedBox(height: 14),
       const Text('Notas', style: A2CText.title),
@@ -294,6 +304,56 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
       }
     }
   }
+
+  Future<void> _revertMovement(String assetId, Movement movement) async {
+    final accepted = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Revertir movimiento'),
+        content: Text(
+          'Se creará un movimiento inverso para devolver ${movement.quantity} ${movement.quantity == 1 ? 'unidad' : 'unidades'} al origen. El historial original se conserva.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Revertir'),
+          ),
+        ],
+      ),
+    );
+    if (accepted != true || !mounted) return;
+    try {
+      await ref.read(movementsRepositoryProvider).revert(movement.id);
+      ref.invalidate(assetMovementHistoryProvider(assetId));
+      ref.invalidate(assetDetailProvider(assetId));
+      ref.invalidate(assetsListProvider);
+      ref.invalidate(sitesListProvider);
+      if (movement.from != null) {
+        ref.invalidate(siteDetailProvider(movement.from!.id));
+        ref.invalidate(siteStockProvider(movement.from!.id));
+        ref.invalidate(siteMovementHistoryProvider(movement.from!.id));
+      }
+      if (movement.to != null) {
+        ref.invalidate(siteDetailProvider(movement.to!.id));
+        ref.invalidate(siteStockProvider(movement.to!.id));
+        ref.invalidate(siteMovementHistoryProvider(movement.to!.id));
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Movimiento revertido.')));
+      }
+    } on ApiFailure catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error.message)));
+      }
+    }
+  }
 }
 
 class _NoteCard extends StatelessWidget {
@@ -324,11 +384,17 @@ class _MovementCard extends StatelessWidget {
   const _MovementCard({
     required this.movement,
     required this.canResolve,
+    required this.canRevert,
+    required this.isReverted,
     required this.onResolve,
+    required this.onRevert,
   });
   final Movement movement;
   final bool canResolve;
+  final bool canRevert;
+  final bool isReverted;
   final VoidCallback onResolve;
+  final VoidCallback onRevert;
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -374,6 +440,22 @@ class _MovementCard extends StatelessWidget {
               ),
             ],
           ],
+          if (canRevert && movement.kind == 'TRASLADO' && !isReverted) ...[
+            const SizedBox(height: 3),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: onRevert,
+                icon: const Icon(Icons.undo_rounded, size: 18),
+                label: const Text('Revertir movimiento'),
+              ),
+            ),
+          ],
+          if (isReverted)
+            Text(
+              'Movimiento revertido',
+              style: A2CText.caption.copyWith(color: A2CColors.inkSecondary),
+            ),
         ],
       ),
     ),

@@ -90,14 +90,37 @@ describe('Movimientos — RF-MOV', () => {
     expect(stocks.reduce((total, row) => total + row.quantity, 0)).toBe(asset.totalStock);
   });
 
+  it('revierte un traslado con movimiento inverso y solo permite hacerlo una vez', async () => {
+    const asset = await createAsset('Caja de llaves', 2);
+    const transfer = await api().post('/api/v1/movements').set(auth).set('Idempotency-Key', `revert-origin-${Date.now()}`)
+      .send({ assetId: asset.id, fromSiteId: warehouseId, toSiteId: siteId, quantity: 2 }).expect(201);
+    const key = `revert-${Date.now()}`;
+    const reverted = await api().post(`/api/v1/movements/${transfer.body.id}/revert`).set(auth)
+      .set('Idempotency-Key', key).expect(201);
+    expect(reverted.body).toMatchObject({
+      kind: 'REVERSION', revertsId: transfer.body.id,
+      fromSite: { id: siteId }, toSite: { id: warehouseId },
+      quantity: 2, stockAfter: { from: 0, to: 2 },
+    });
+    const retry = await api().post(`/api/v1/movements/${transfer.body.id}/revert`).set(auth)
+      .set('Idempotency-Key', key).expect(201);
+    expect(retry.body.id).toBe(reverted.body.id);
+    const duplicate = await api().post(`/api/v1/movements/${transfer.body.id}/revert`).set(auth)
+      .set('Idempotency-Key', `revert-again-${Date.now()}`).expect(409);
+    expect(duplicate.body.code).toBe('MOVIMIENTO_REVERTIDO');
+  });
+
   it('permite el traslado a operadores autenticados', async () => {
     const operator = await seedUser(app, { role: Role.OPERADOR });
     const session = await loginOk(app, operator.dni, operator.password);
     const tool = await createAsset('Esmeril manual', 1);
-    await api().post('/api/v1/movements').set({ Authorization: `Bearer ${session.accessToken}` })
+    const transfer = await api().post('/api/v1/movements').set({ Authorization: `Bearer ${session.accessToken}` })
       .set('Idempotency-Key', `operator-move-${Date.now()}`)
       .send({ assetId: tool.id, fromSiteId: warehouseId, toSiteId: siteId, quantity: 1 }).expect(201);
     await api().post('/api/v1/observations/00000000-0000-4000-8000-000000000000/resolve')
       .set({ Authorization: `Bearer ${session.accessToken}` }).send({ resolution: 'No autorizado' }).expect(403);
+    await api().post(`/api/v1/movements/${transfer.body.id}/revert`)
+      .set({ Authorization: `Bearer ${session.accessToken}` }).set('Idempotency-Key', 'operator-revert')
+      .expect(403);
   });
 });
