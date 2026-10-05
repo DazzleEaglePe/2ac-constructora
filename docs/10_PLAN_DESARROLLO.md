@@ -26,7 +26,7 @@
 | ------ | ------------- | ------ | ----- |
 | S0     | ✅ Completado* | 95 %   | *Quedan como tareas del usuario: probar en un celular físico y proteger `main`* |
 | S1     | ⏳ En revisión | 95 %   | API (28 pruebas) + app (25 pruebas); flujo completo verificado en simulador iOS, web y emulador Android 15. PR #1. Pendiente: validación en Android físico y medición de 60 fps en equipo de gama media |
-| S2     | ⬜ Pendiente   | 0 %    |       |
+| S2     | 🟡 En progreso | 60 %   | API y flujo base de obras/almacén implementados; falta mapa integrado y cerrar pruebas de dispositivo. |
 | S3     | ⬜ Pendiente   | 0 %    |       |
 | S4     | ⬜ Pendiente   | 0 %    |       |
 | S5     | ⬜ Pendiente   | 0 %    |       |
@@ -129,20 +129,20 @@ Leyenda: ⬜ pendiente · ⏳ en curso · ✅ completado · ⚠️ bloqueado
 **Requerimientos:** RF-UBI-01…07, RF-BUS-03
 
 **API**
-- [ ] Módulo `sites`: CRUD, cerrar/reabrir (valida stock 0), `GET /sites/{id}/stock`
-- [ ] Resumen por ubicación (`units`, `assetCount`, `topItems`, `lastMovementAt`)
-- [ ] Auditoría de altas y cierres de obra
+- [x] Módulo `sites`: CRUD, cerrar/reabrir (valida stock 0), `GET /sites/{id}/stock`
+- [x] Resumen por ubicación (`units`, `assetCount`, `topItems`, `lastMovementAt`)
+- [x] Auditoría de altas, ediciones y cierres/reaperturas de obra
 
 **App**
-- [ ] **Nueva obra**: nombre, dueño, búsqueda de dirección, mapa con pin ajustable
-- [ ] **Detalle de obra**: título en 2 líneas, bento (unidades en tarjeta negra, activos, dueño), mapa con "Abrir en Maps", filtros por tipo, lista de activos
-- [ ] Almacén central con el mismo detalle
-- [ ] Lista de obras en el panel (tarjetas `SiteCard`, sin tiempo real aún)
+- [ ] **Nueva obra**: nombre, responsable, ubicación por coordenadas y acceso a Maps; falta geocodificación y mapa con pin ajustable
+- [x] **Detalle de obra**: datos, stock, responsable, dirección/coordenadas, filtros por tipo y acceso a Maps
+- [x] Almacén central visible en el panel y con detalle/stock
+- [x] Lista de obras en el panel (tarjetas `SiteCard`, sin tiempo real aún)
 
 **Criterios de aceptación**
-- [ ] Crear una obra con ubicación y verla en el panel y en su detalle
-- [ ] "Abrir en Maps" abre la app de mapas del dispositivo en el punto correcto
-- [ ] No se puede cerrar una obra con activos
+- [x] Crear/editar una obra con coordenadas y verla en el panel y en su detalle
+- [x] "Abrir en Maps" abre Maps con dirección o coordenadas
+- [x] No se puede cerrar una obra con activos
 
 ---
 

@@ -8,7 +8,11 @@ export type AuditAction =
   | 'USER_DEACTIVATED'
   | 'USER_ACTIVATED'
   | 'USER_PASSWORD_RESET'
-  | 'LOGIN_LOCKED';
+  | 'LOGIN_LOCKED'
+  | 'SITE_CREATED'
+  | 'SITE_UPDATED'
+  | 'SITE_CLOSED'
+  | 'SITE_REOPENED';
 
 export interface AuditEntry {
   userId: string;

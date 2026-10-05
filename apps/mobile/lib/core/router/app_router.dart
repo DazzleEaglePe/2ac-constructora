@@ -9,6 +9,9 @@ import '../../features/dev/component_catalog_screen.dart';
 import '../../features/shell/dashboard_screen.dart';
 import '../../features/shell/home_shell.dart';
 import '../../features/shell/inventory_screen.dart';
+import '../../features/sites/domain/site.dart';
+import '../../features/sites/presentation/new_site_screen.dart';
+import '../../features/sites/presentation/site_detail_screen.dart';
 import '../../features/users/presentation/users_screen.dart';
 import '../../features/welcome/onboarding_screen.dart';
 import '../../features/welcome/splash_screen.dart';
@@ -46,7 +49,29 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         branches: [
           StatefulShellBranch(
             routes: [
-              GoRoute(path: '/', builder: (_, _) => const DashboardScreen()),
+              GoRoute(
+                path: '/',
+                builder: (_, _) => const DashboardScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'sites/new',
+                    builder: (_, _) => const NewSiteScreen(),
+                  ),
+                  GoRoute(
+                    path: 'sites/:siteId',
+                    builder: (_, state) => SiteDetailScreen(
+                      siteId: state.pathParameters['siteId']!,
+                    ),
+                    routes: [
+                      GoRoute(
+                        path: 'edit',
+                        builder: (_, state) =>
+                            NewSiteScreen(initialSite: state.extra as Site?),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ],
           ),
           StatefulShellBranch(
