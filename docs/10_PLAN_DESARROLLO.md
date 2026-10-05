@@ -27,7 +27,7 @@
 | S0     | ✅ Completado* | 95 %   | *Quedan como tareas del usuario: probar en un celular físico y proteger `main`* |
 | S1     | ⏳ En revisión | 95 %   | API (28 pruebas) + app (25 pruebas); flujo completo verificado en simulador iOS, web y emulador Android 15. PR #1. Pendiente: validación en Android físico y medición de 60 fps en equipo de gama media |
 | S2     | 🟡 En progreso | 60 %   | API y flujo base de obras/almacén implementados; falta mapa integrado y cerrar pruebas de dispositivo. |
-| S3     | ⬜ Pendiente   | 0 %    |       |
+| S3     | 🟡 En progreso | 55 %   | Catálogo, alta, búsqueda básica, distribución y notas listos; faltan historial de movimientos, edición visual y búsqueda optimizada. |
 | S4     | ⬜ Pendiente   | 0 %    |       |
 | S5     | ⬜ Pendiente   | 0 %    |       |
 | S6     | ⬜ Pendiente   | 0 %    |       |
@@ -151,18 +151,18 @@ Leyenda: ⬜ pendiente · ⏳ en curso · ✅ completado · ⚠️ bloqueado
 **Requerimientos:** RF-ACT-01…08, RF-BUS-01, RF-BUS-02, RF-BUS-04, RF-BUS-05
 
 **API**
-- [ ] Módulo `assets`: alta transaccional (código por secuencia + stock inicial + movimiento `ALTA`)
-- [ ] `GET /assets/next-code`, edición, cambio de estado con motivo, notas
-- [ ] Búsqueda por nombre/código (trigram + unaccent) y filtros
-- [ ] `distribution[]` en los resultados de búsqueda (consulta de disponibilidad, RF-BUS-05)
-- [ ] Regla RN-01 (máquina = 1) en servicio y en BD
+- [x] Módulo `assets`: alta transaccional (código por secuencia + stock inicial + movimiento `ALTA`)
+- [x] `GET /assets/next-code`, edición, cambio de estado con motivo y notas
+- [ ] Búsqueda por nombre/código y filtros (búsqueda básica lista; paginación y trigram/unaccent pendientes)
+- [x] `distribution[]` en los resultados de búsqueda (consulta de disponibilidad, RF-BUS-05)
+- [x] Regla RN-01 (máquina = 1) en servicio y en BD
 - [ ] Pruebas unitarias de reglas y concurrencia de códigos
 
 **App**
-- [ ] **Nueva herramienta o equipo**: tipo (máquina/herramienta), código automático, nombre, descripción, estado, stock (bloqueado en 1 para máquina), ubicación inicial
-- [ ] **Inventario general**: buscador, filtros por tipo y estado, filas `AssetRow`, FAB (solo admin), estado vacío
-- [ ] **Consulta de disponibilidad**: resultados de búsqueda con distribución por obra y almacén ("Almacén central 6 · Obra Juan Ramírez 2")
-- [ ] **Detalle de activo**: código, tipo, estado, distribución por ubicación (barra + leyenda), notas desplegables
+- [x] **Nueva herramienta o equipo**: tipo, código automático, nombre, descripción, stock inicial (máquina limitada a 1) y ubicación inicial
+- [x] **Inventario general**: buscador, filtros por tipo y estado, distribución resumida, botón de alta solo admin y estado vacío
+- [x] **Consulta de disponibilidad**: resultados de búsqueda con distribución resumida por obra y almacén
+- [ ] **Detalle de activo**: código, tipo, estado, distribución y notas listos; falta la barra visual de distribución
 - [ ] Hoja inferior para editar y cambiar estado
 
 **Criterios de aceptación**

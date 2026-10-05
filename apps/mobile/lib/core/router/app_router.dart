@@ -6,6 +6,8 @@ import '../../features/auth/application/session_controller.dart';
 import '../../features/auth/presentation/change_password_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/dev/component_catalog_screen.dart';
+import '../../features/assets/presentation/new_asset_screen.dart';
+import '../../features/assets/presentation/asset_detail_screen.dart';
 import '../../features/shell/dashboard_screen.dart';
 import '../../features/shell/home_shell.dart';
 import '../../features/shell/inventory_screen.dart';
@@ -79,6 +81,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/inventory',
                 builder: (_, _) => const InventoryScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'assets/new',
+                    builder: (_, _) => const NewAssetScreen(),
+                  ),
+                  GoRoute(
+                    path: 'assets/:assetId',
+                    builder: (_, state) => AssetDetailScreen(
+                      assetId: state.pathParameters['assetId']!,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

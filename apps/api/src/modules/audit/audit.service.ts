@@ -12,7 +12,11 @@ export type AuditAction =
   | 'SITE_CREATED'
   | 'SITE_UPDATED'
   | 'SITE_CLOSED'
-  | 'SITE_REOPENED';
+  | 'SITE_REOPENED'
+  | 'ASSET_CREATED'
+  | 'ASSET_UPDATED'
+  | 'ASSET_STATUS_CHANGED'
+  | 'ASSET_NOTE_ADDED';
 
 export interface AuditEntry {
   userId: string;

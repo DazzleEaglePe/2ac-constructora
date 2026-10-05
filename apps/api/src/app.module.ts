@@ -10,6 +10,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { HealthModule } from './modules/health/health.module';
 import { UsersModule } from './modules/users/users.module';
 import { SitesModule } from './modules/sites/sites.module';
+import { AssetsModule } from './modules/assets/assets.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { RedisModule } from './redis/redis.module';
 
@@ -43,6 +44,7 @@ import { RedisModule } from './redis/redis.module';
     AuthModule,
     UsersModule,
     SitesModule,
+    AssetsModule,
     HealthModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
