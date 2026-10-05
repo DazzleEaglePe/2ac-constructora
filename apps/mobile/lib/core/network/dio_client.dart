@@ -26,7 +26,7 @@ final dioProvider = Provider<Dio>((ref) {
   final holder = ref.watch(accessTokenHolderProvider);
 
   dio.interceptors.add(
-    QueuedInterceptorsWrapper(
+    InterceptorsWrapper(
       onRequest: (options, handler) {
         final token = holder.token;
         if (token != null) options.headers['Authorization'] = 'Bearer $token';
@@ -38,6 +38,12 @@ final dioProvider = Provider<Dio>((ref) {
         if (error.response?.statusCode != 401 || alreadyRetried) {
           return handler.next(error);
         }
+
+        final responseBody = error.response?.data;
+        final errorCode = responseBody is Map<String, dynamic>
+            ? responseBody['code']
+            : null;
+        if (errorCode != 'NO_AUTENTICADO') return handler.next(error);
 
         final renewed = await ref
             .read(sessionProvider.notifier)
