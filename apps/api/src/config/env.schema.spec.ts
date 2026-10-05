@@ -4,8 +4,8 @@ describe('validateEnv', () => {
   const base = {
     DATABASE_URL: 'postgresql://a2c:a2c@localhost:5433/a2c',
     REDIS_URL: 'redis://localhost:6380',
-    JWT_PRIVATE_KEY: '-----BEGIN PRIVATE KEY-----\\nabc\\n-----END PRIVATE KEY-----',
-    JWT_PUBLIC_KEY: '-----BEGIN PUBLIC KEY-----\\nabc\\n-----END PUBLIC KEY-----',
+    JWT_PRIVATE_KEY: 'clave-de-prueba\\nlinea-2',
+    JWT_PUBLIC_KEY: 'publica-de-prueba\\nlinea-2',
   };
 
   it('aplica valores por defecto', () => {
