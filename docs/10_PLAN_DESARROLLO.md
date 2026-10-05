@@ -27,7 +27,7 @@
 | S0     | ✅ Completado* | 95 %   | *Quedan como tareas del usuario: probar en un celular físico y proteger `main`* |
 | S1     | ⏳ En revisión | 95 %   | API (28 pruebas) + app (25 pruebas); flujo completo verificado en simulador iOS, web y emulador Android 15. PR #1. Pendiente: validación en Android físico y medición de 60 fps en equipo de gama media |
 | S2     | 🟡 En progreso | 60 %   | API y flujo base de obras/almacén implementados; falta mapa integrado y cerrar pruebas de dispositivo. |
-| S3     | 🟡 En progreso | 55 %   | Catálogo, alta, búsqueda básica, distribución y notas listos; faltan búsqueda optimizada, edición visual y concurrencia de códigos. |
+| S3     | 🟡 En progreso | 65 %   | Catálogo, alta, edición, búsqueda básica, distribución y notas listos; faltan búsqueda optimizada y prueba de concurrencia. |
 | S4     | 🟡 En progreso | 85 %   | Traslados, reversiones, observaciones e historial por activo/obra listos; faltan tareas operativas y revisión final. |
 | S5     | 🟡 En progreso | 45 %   | Resumen, observaciones abiertas y consulta de auditoría para ADMIN listos; falta tiempo real. |
 | S6     | ⬜ Pendiente   | 0 %    |       |
@@ -163,7 +163,7 @@ Leyenda: ⬜ pendiente · ⏳ en curso · ✅ completado · ⚠️ bloqueado
 - [x] **Inventario general**: buscador, filtros por tipo y estado, distribución resumida, botón de alta solo admin y estado vacío
 - [x] **Consulta de disponibilidad**: resultados de búsqueda con distribución resumida por obra y almacén
 - [ ] **Detalle de activo**: código, tipo, estado, distribución y notas listos; falta la barra visual de distribución
-- [ ] Hoja inferior para editar y cambiar estado
+- [x] Edición de nombre y descripción, y cambio de estado con motivo obligatorio para dar de baja
 
 **Criterios de aceptación**
 - [ ] Dos altas simultáneas nunca generan el mismo código

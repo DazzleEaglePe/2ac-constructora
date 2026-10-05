@@ -54,6 +54,30 @@ class AssetsRepository {
     );
   });
 
+  Future<Asset> update(
+    String id, {
+    required String name,
+    String? description,
+  }) => guardApi(() async {
+    final response = await _dio.patch<Map<String, dynamic>>(
+      '/assets/$id',
+      data: {'name': name, 'description': description},
+    );
+    return Asset.fromJson(response.data!);
+  });
+
+  Future<Asset> changeStatus(
+    String id, {
+    required String status,
+    String? reason,
+  }) => guardApi(() async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/assets/$id/status',
+      data: {'status': status, 'reason': reason},
+    );
+    return Asset.fromJson(response.data!);
+  });
+
   Future<Asset> create({
     required String type,
     required String name,

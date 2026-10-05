@@ -50,6 +50,41 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
           icon: const Icon(Icons.arrow_back_rounded),
           tooltip: 'Volver',
         ),
+        actions: [
+          if (canResolve)
+            asset.whenOrNull(
+                  data: (value) => Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        tooltip: 'Editar activo',
+                        onPressed: () => _editAsset(value),
+                        icon: const Icon(Icons.edit_outlined),
+                      ),
+                      PopupMenuButton<String>(
+                        tooltip: 'Cambiar estado',
+                        initialValue: value.status,
+                        onSelected: (status) => _changeStatus(value, status),
+                        itemBuilder: (_) => const [
+                          PopupMenuItem(
+                            value: 'OPERATIVO',
+                            child: Text('Marcar operativo'),
+                          ),
+                          PopupMenuItem(
+                            value: 'MANTENIMIENTO',
+                            child: Text('Enviar a mantenimiento'),
+                          ),
+                          PopupMenuItem(
+                            value: 'BAJA',
+                            child: Text('Dar de baja'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ) ??
+                const SizedBox.shrink(),
+        ],
       ),
       body: asset.when(
         loading: () => const Center(
@@ -250,6 +285,166 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
       if (mounted) setState(() => _saving = false);
     }
   }
+
+  Future<void> _editAsset(Asset asset) async {
+    final formKey = GlobalKey<FormState>();
+    final name = TextEditingController(text: asset.name);
+    final description = TextEditingController(text: asset.description ?? '');
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Editar activo'),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: name,
+                autofocus: true,
+                maxLength: 120,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: const InputDecoration(labelText: 'Nombre'),
+                validator: (value) => value == null || value.trim().length < 2
+                    ? 'Ingresa al menos 2 caracteres'
+                    : null,
+              ),
+              TextFormField(
+                controller: description,
+                maxLength: 2000,
+                minLines: 2,
+                maxLines: 4,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: const InputDecoration(labelText: 'Descripción'),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (formKey.currentState!.validate()) {
+                Navigator.pop(dialogContext, true);
+              }
+            },
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
+    final updatedName = name.text.trim();
+    final updatedDescription = description.text.trim();
+    name.dispose();
+    description.dispose();
+    if (saved != true || !mounted) return;
+    try {
+      await ref
+          .read(assetsRepositoryProvider)
+          .update(
+            asset.id,
+            name: updatedName,
+            description: updatedDescription.isEmpty ? null : updatedDescription,
+          );
+      _refreshAsset(asset.id);
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Activo actualizado.')));
+      }
+    } on ApiFailure catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error.message)));
+      }
+    }
+  }
+
+  Future<void> _changeStatus(Asset asset, String status) async {
+    if (asset.status == status) return;
+    final reason = TextEditingController();
+    String? validationMessage;
+    final accepted = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: Text(
+            status == 'BAJA' ? 'Dar de baja el activo' : 'Cambiar estado',
+          ),
+          content: status == 'BAJA'
+              ? TextField(
+                  controller: reason,
+                  minLines: 2,
+                  maxLines: 4,
+                  maxLength: 500,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: InputDecoration(
+                    labelText: 'Motivo',
+                    errorText: validationMessage,
+                  ),
+                )
+              : Text('¿Cambiar el estado a ${_statusLabel(status)}?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () {
+                if (status == 'BAJA' && reason.text.trim().length < 3) {
+                  setDialogState(
+                    () => validationMessage = 'Escribe al menos 3 caracteres',
+                  );
+                  return;
+                }
+                Navigator.pop(dialogContext, true);
+              },
+              child: const Text('Confirmar'),
+            ),
+          ],
+        ),
+      ),
+    );
+    final reasonText = reason.text.trim();
+    reason.dispose();
+    if (accepted != true || !mounted) return;
+    try {
+      await ref
+          .read(assetsRepositoryProvider)
+          .changeStatus(
+            asset.id,
+            status: status,
+            reason: reasonText.isEmpty ? null : reasonText,
+          );
+      _refreshAsset(asset.id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Estado actualizado a ${_statusLabel(status)}.'),
+          ),
+        );
+      }
+    } on ApiFailure catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error.message)));
+      }
+    }
+  }
+
+  void _refreshAsset(String id) {
+    ref.invalidate(assetDetailProvider(id));
+    ref.invalidate(assetsListProvider);
+  }
+
+  String _statusLabel(String status) => switch (status) {
+    'OPERATIVO' => 'Operativo',
+    'MANTENIMIENTO' => 'Mantenimiento',
+    'BAJA' => 'Baja',
+    _ => status,
+  };
 
   Future<void> _resolveObservation(String assetId, Movement movement) async {
     final observation = movement.observation;
