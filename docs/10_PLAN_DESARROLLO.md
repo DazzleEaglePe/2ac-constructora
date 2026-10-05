@@ -24,8 +24,8 @@
 
 | Sprint | Estado        | Avance | Notas |
 | ------ | ------------- | ------ | ----- |
-| S0     | ✅ Completado* | 95 %   | *Quedan como tareas del usuario: aceptar licencias Android y probar en un celular físico; proteger `main` |
-| S1     | ⏳ En revisión | 95 %   | API (28 pruebas) + app (25 pruebas), flujo verificado en iOS y web. PR #1. Falta: prueba en Android |
+| S0     | ✅ Completado* | 95 %   | *Quedan como tareas del usuario: probar en un celular físico y proteger `main`* |
+| S1     | ⏳ En revisión | 95 %   | API (28 pruebas) + app (25 pruebas); flujo completo verificado en simulador iOS, web y emulador Android 15. PR #1. Pendiente: validación en Android físico y medición de 60 fps en equipo de gama media |
 | S2     | ⬜ Pendiente   | 0 %    |       |
 | S3     | ⬜ Pendiente   | 0 %    |       |
 | S4     | ⬜ Pendiente   | 0 %    |       |
@@ -81,7 +81,7 @@ Leyenda: ⬜ pendiente · ⏳ en curso · ✅ completado · ⚠️ bloqueado
 
 **Criterios de aceptación**
 - [x] `docker compose up` + `pnpm dev:api` responde `200` en `/health/ready`
-- [ ] La app abre en un Android y un iOS físicos con el tema A2C y la fuente Geist — *verificado en **simulador iOS (iPhone 18 Pro)** y **web**, conectada a la API; falta Android (aceptar licencias del SDK) y dispositivos físicos*
+- [ ] La app abre en un Android y un iOS físicos con el tema A2C y la fuente Geist — *verificado en **simulador iOS (iPhone 18 Pro)**, **web** y **emulador Android 15**, conectado a la API; falta validar dispositivos físicos*
 - [x] CI verde en GitHub Actions (API, Mobile y Seguridad)
 
 ---
@@ -120,7 +120,7 @@ Leyenda: ⬜ pendiente · ⏳ en curso · ✅ completado · ⚠️ bloqueado
 - [x] Usos siguientes: splash breve → panel sin pedir credenciales
 - [x] 5 intentos fallidos bloquean la cuenta 15 min con mensaje claro
 - [x] Un usuario desactivado pierde la sesión en ≤ 15 min (o al instante con WS en S5)
-- [ ] El splash corre a 60 fps en un Android de gama media — *verificado en simulador iOS y web; falta Android (licencias del SDK)*
+- [ ] El splash corre a 60 fps en un Android de gama media — *verificado el flujo en simulador iOS, web y emulador Android 15; falta medir rendimiento en un Android físico de gama media*
 
 ---
 
