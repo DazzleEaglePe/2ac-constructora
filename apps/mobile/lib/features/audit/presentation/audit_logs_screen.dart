@@ -9,6 +9,7 @@ import '../../../core/theme/a2c_dimens.dart';
 import '../../../core/theme/a2c_typography.dart';
 import '../../../shared/widgets/a2c_cards.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../../../shared/widgets/loading_skeleton.dart';
 import '../data/audit_repository.dart';
 import '../domain/audit_log.dart';
 
@@ -48,7 +49,10 @@ class _AuditLogsScreenState extends ConsumerState<AuditLogsScreen> {
         _items.clear();
       });
     } else {
-      setState(() => _loadingMore = true);
+      setState(() {
+        _loadingMore = true;
+        _error = null;
+      });
     }
     try {
       final page = await ref
@@ -64,10 +68,10 @@ class _AuditLogsScreenState extends ConsumerState<AuditLogsScreen> {
         _loading = false;
         _loadingMore = false;
       });
-    } on ApiFailure catch (error) {
+    } on Object catch (error) {
       if (!mounted) return;
       setState(() {
-        _error = error.message;
+        _error = error is ApiFailure ? error.message : 'Inténtalo de nuevo.';
         _loading = false;
         _loadingMore = false;
       });
@@ -113,12 +117,13 @@ class _AuditLogsScreenState extends ConsumerState<AuditLogsScreen> {
           const SizedBox(height: 16),
           if (_loading)
             const Padding(
-              padding: EdgeInsets.all(36),
-              child: Center(
-                child: CircularProgressIndicator(color: A2CColors.ink),
+              padding: EdgeInsets.only(top: 8),
+              child: A2CLoadingSkeleton(
+                label: 'Cargando los registros de auditoría',
+                rows: 3,
               ),
             )
-          else if (_error != null)
+          else if (_error != null && _items.isEmpty)
             EmptyState(
               icon: Icons.cloud_off_rounded,
               title: 'No se cargó la auditoría',
@@ -137,13 +142,24 @@ class _AuditLogsScreenState extends ConsumerState<AuditLogsScreen> {
               _AuditCard(item: item),
               const SizedBox(height: 9),
             ],
-            if (_cursor != null)
+            if (_error != null)
+              EmptyState(
+                icon: Icons.cloud_off_rounded,
+                title: 'No se cargaron más registros',
+                message: _error!,
+                actionLabel: 'Reintentar',
+                onAction: () => _load(reset: false),
+              )
+            else if (_cursor != null)
               OutlinedButton.icon(
                 onPressed: _loadingMore ? null : () => _load(reset: false),
                 icon: _loadingMore
                     ? const SizedBox.square(
                         dimension: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          semanticsLabel: 'Cargando más registros de auditoría',
+                        ),
                       )
                     : const Icon(Icons.expand_more_rounded),
                 label: Text(_loadingMore ? 'Cargando…' : 'Cargar más'),

@@ -4,6 +4,7 @@ import { DomainException } from '../../common/filters/problem-details.filter';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { AuthUser } from '../auth/auth.types';
 import { AuditService } from '../audit/audit.service';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
 import type { CreateMovementDto, ListMovementsQuery } from './dto/movements.dto';
 
 const includeMovement = {
@@ -19,7 +20,11 @@ const fail = (code: string, message: string, status: HttpStatus) =>
 
 @Injectable()
 export class MovementsService {
-  constructor(private readonly prisma: PrismaService, private readonly audit: AuditService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly audit: AuditService,
+    private readonly realtime: RealtimeGateway,
+  ) {}
 
   async create(dto: CreateMovementDto, idempotencyKey: string, actor: AuthUser) {
     if (dto.fromSiteId === dto.toSiteId) {
@@ -31,7 +36,7 @@ export class MovementsService {
     });
     if (repeated) return this.replayOrConflict(repeated, dto, this.prisma);
 
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       await tx.$queryRaw<{ locked: boolean }[]>`SELECT pg_advisory_xact_lock(hashtextextended(${`${actor.id}:${idempotencyKey}`}, 1)) IS NULL AS locked`;
       // Serializa todos los cambios de distribución de este activo, también cuando el destino aún no tiene fila de stock.
       await tx.$queryRaw<{ locked: boolean }[]>`SELECT pg_advisory_xact_lock(hashtextextended(${dto.assetId}, 0)) IS NULL AS locked`;
@@ -99,6 +104,19 @@ export class MovementsService {
         stockAfter: { from: sourceAfter, to: destination.quantity },
       };
     });
+    const event = {
+      id: result.id,
+      assetId: result.assetId,
+      fromSiteId: result.fromSiteId,
+      toSiteId: result.toSiteId,
+      createdAt: result.createdAt.toISOString(),
+    };
+    this.realtime.publish('movement.created', event);
+    this.realtime.publish('stock.updated', {
+      assetId: result.assetId,
+      siteIds: [result.fromSiteId, result.toSiteId],
+    });
+    return result;
   }
 
   async list(query: ListMovementsQuery) {
@@ -142,7 +160,7 @@ export class MovementsService {
       throw fail('VALIDACION', 'Solo se puede revertir un traslado', HttpStatus.UNPROCESSABLE_ENTITY);
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       await tx.$queryRaw<{ locked: boolean }[]>`SELECT pg_advisory_xact_lock(hashtextextended(${`${actor.id}:${idempotencyKey}`}, 1)) IS NULL AS locked`;
       await tx.$queryRaw<{ locked: boolean }[]>`SELECT pg_advisory_xact_lock(hashtextextended(${original.assetId}, 0)) IS NULL AS locked`;
       const duplicate = await tx.movement.findUnique({
@@ -215,6 +233,19 @@ export class MovementsService {
       const full = await tx.movement.findUniqueOrThrow({ where: { id: reverted.id }, include: includeMovement });
       return { ...full, stockAfter: { from: source.quantity - currentOriginal.quantity, to: destination.quantity } };
     });
+    const event = {
+      id: result.id,
+      assetId: result.assetId,
+      fromSiteId: result.fromSiteId,
+      toSiteId: result.toSiteId,
+      createdAt: result.createdAt.toISOString(),
+    };
+    this.realtime.publish('movement.created', event);
+    this.realtime.publish('stock.updated', {
+      assetId: result.assetId,
+      siteIds: [result.fromSiteId, result.toSiteId],
+    });
+    return result;
   }
 
   private replayOrConflict(

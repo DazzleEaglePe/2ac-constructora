@@ -50,9 +50,17 @@ dependencies:
   lucide_icons_flutter: ^3.1.21
   flutter_localizations:
     sdk: flutter
+  socket_io_client: ^3.1.6
+  flutter_map: ^8.3.2
+  geocoding: ^5.0.0
+  latlong2: ^0.10.1
+  drift_flutter: ^0.3.1
+  sentry_flutter: ^9.30.1
 
 dev_dependencies:
   flutter_test:
+    sdk: flutter
+  integration_test:
     sdk: flutter
 
   # The "flutter_lints" package below contains a set of recommended lints to

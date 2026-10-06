@@ -3,23 +3,36 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_failure.dart';
 import '../../../core/network/dio_client.dart';
+import '../../../core/storage/cached_json.dart';
+import '../../../core/storage/local_database.dart';
 import '../domain/site.dart';
 
 class SitesRepository {
-  SitesRepository(this._dio);
+  SitesRepository(this._dio, [this._database]);
 
   final Dio _dio;
+  final LocalDatabase? _database;
 
   Future<List<Site>> list() => guardApi(() async {
-    final response = await _dio.get<List<dynamic>>('/sites');
-    return (response.data ?? const [])
+    final body = await getCachedJson(
+      dio: _dio,
+      database: _database,
+      key: 'sites:list',
+      path: '/sites',
+    );
+    return ((body as List<dynamic>?) ?? const [])
         .map((json) => Site.fromJson(json as Map<String, dynamic>))
         .toList(growable: false);
   });
 
   Future<Site> get(String id) => guardApi(() async {
-    final response = await _dio.get<Map<String, dynamic>>('/sites/$id');
-    return Site.fromJson(response.data!);
+    final body = await getCachedJson(
+      dio: _dio,
+      database: _database,
+      key: 'sites:detail:$id',
+      path: '/sites/$id',
+    );
+    return Site.fromJson(body! as Map<String, dynamic>);
   });
 
   Future<List<SiteStockItem>> stock(String id, {String? type}) =>
@@ -88,7 +101,8 @@ class SitesRepository {
 }
 
 final sitesRepositoryProvider = Provider<SitesRepository>(
-  (ref) => SitesRepository(ref.watch(dioProvider)),
+  (ref) =>
+      SitesRepository(ref.watch(dioProvider), ref.watch(localDatabaseProvider)),
 );
 
 final sitesListProvider = FutureProvider.autoDispose<List<Site>>(

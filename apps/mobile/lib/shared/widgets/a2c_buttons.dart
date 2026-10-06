@@ -12,6 +12,7 @@ class A2CPrimaryButton extends StatelessWidget {
     required this.onPressed,
     this.icon,
     this.loading = false,
+    this.loadingLabel = 'Cargando',
     this.expand = true,
   });
 
@@ -19,16 +20,18 @@ class A2CPrimaryButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final IconData? icon;
   final bool loading;
+  final String loadingLabel;
   final bool expand;
 
   @override
   Widget build(BuildContext context) {
     final child = loading
-        ? const SizedBox.square(
+        ? SizedBox.square(
             dimension: 22,
             child: CircularProgressIndicator(
               strokeWidth: 2.4,
               color: A2CColors.ink,
+              semanticsLabel: loadingLabel,
             ),
           )
         : Row(
@@ -38,34 +41,38 @@ class A2CPrimaryButton extends StatelessWidget {
                 Icon(icon, size: 20),
                 const SizedBox(width: 8),
               ],
-              Flexible(child: Text(label, overflow: TextOverflow.ellipsis)),
+              Flexible(child: Text(label)),
             ],
           );
 
-    return SizedBox(
-      width: expand ? double.infinity : null,
-      height: A2CSizes.primaryButtonHeight,
-      child: FilledButton(
-        onPressed: loading ? null : onPressed,
-        style: ButtonStyle(
-          backgroundColor: WidgetStateProperty.resolveWith(
-            (s) => s.contains(WidgetState.pressed)
-                ? A2CColors.brandYellowPressed
-                : s.contains(WidgetState.disabled) && !loading
-                ? A2CColors.brandYellow.withValues(alpha: 0.4)
-                : A2CColors.brandYellow,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(
+        minHeight: A2CSizes.primaryButtonHeight,
+      ),
+      child: SizedBox(
+        width: expand ? double.infinity : null,
+        child: FilledButton(
+          onPressed: loading ? null : onPressed,
+          style: ButtonStyle(
+            backgroundColor: WidgetStateProperty.resolveWith(
+              (s) => s.contains(WidgetState.pressed)
+                  ? A2CColors.brandYellowPressed
+                  : s.contains(WidgetState.disabled) && !loading
+                  ? A2CColors.brandYellow.withValues(alpha: 0.4)
+                  : A2CColors.brandYellow,
+            ),
+            foregroundColor: const WidgetStatePropertyAll(A2CColors.onYellow),
+            textStyle: WidgetStatePropertyAll(
+              A2CText.bodyStrong.copyWith(fontSize: 16),
+            ),
+            shape: const WidgetStatePropertyAll(StadiumBorder()),
+            elevation: const WidgetStatePropertyAll(0),
+            padding: const WidgetStatePropertyAll(
+              EdgeInsets.symmetric(horizontal: 24),
+            ),
           ),
-          foregroundColor: const WidgetStatePropertyAll(A2CColors.onYellow),
-          textStyle: WidgetStatePropertyAll(
-            A2CText.bodyStrong.copyWith(fontSize: 16),
-          ),
-          shape: const WidgetStatePropertyAll(StadiumBorder()),
-          elevation: const WidgetStatePropertyAll(0),
-          padding: const WidgetStatePropertyAll(
-            EdgeInsets.symmetric(horizontal: 24),
-          ),
+          child: child,
         ),
-        child: child,
       ),
     );
   }
@@ -88,19 +95,23 @@ class A2CSecondaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: expand ? double.infinity : null,
-      height: A2CSizes.primaryButtonHeight,
-      child: OutlinedButton.icon(
-        onPressed: onPressed,
-        icon: icon == null ? null : Icon(icon, size: 20),
-        label: Text(label),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: A2CColors.ink,
-          backgroundColor: A2CColors.surface,
-          side: const BorderSide(color: A2CColors.borderStrong),
-          shape: const StadiumBorder(),
-          textStyle: A2CText.bodyStrong,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(
+        minHeight: A2CSizes.primaryButtonHeight,
+      ),
+      child: SizedBox(
+        width: expand ? double.infinity : null,
+        child: OutlinedButton.icon(
+          onPressed: onPressed,
+          icon: icon == null ? null : Icon(icon, size: 20),
+          label: Text(label),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: A2CColors.ink,
+            backgroundColor: A2CColors.surface,
+            side: const BorderSide(color: A2CColors.borderStrong),
+            shape: const StadiumBorder(),
+            textStyle: A2CText.bodyStrong,
+          ),
         ),
       ),
     );

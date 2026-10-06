@@ -11,6 +11,7 @@ import '../../../core/theme/a2c_dimens.dart';
 import '../../../core/theme/a2c_typography.dart';
 import '../../../shared/widgets/a2c_buttons.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../../../shared/widgets/loading_skeleton.dart';
 import '../../auth/application/session_controller.dart';
 import '../../auth/domain/app_user.dart';
 import '../data/users_repository.dart';
@@ -72,7 +73,7 @@ class UsersScreen extends ConsumerWidget {
               const SizedBox(height: 20),
               ...users.when(
                 loading: () => [
-                  for (var i = 0; i < 4; i++) const _UserRowSkeleton(),
+                  const A2CLoadingRows(label: 'Cargando usuarios'),
                 ],
                 error: (e, _) => [
                   EmptyState(
@@ -265,20 +266,6 @@ class _Tag extends StatelessWidget {
   );
 }
 
-class _UserRowSkeleton extends StatelessWidget {
-  const _UserRowSkeleton();
-
-  @override
-  Widget build(BuildContext context) => Container(
-    height: 76,
-    margin: const EdgeInsets.only(bottom: 8),
-    decoration: BoxDecoration(
-      color: A2CColors.surface,
-      borderRadius: BorderRadius.circular(A2CRadii.md),
-    ),
-  );
-}
-
 class _RolePicker extends StatelessWidget {
   const _RolePicker({required this.value, required this.onChanged});
 
@@ -375,14 +362,19 @@ class _CreateUserSheetState extends ConsumerState<_CreateUserSheet> {
             Text('Nuevo usuario', style: A2CText.title.copyWith(fontSize: 20)),
             const SizedBox(height: 16),
             if (_error != null) ...[
-              Text(
-                _error!,
-                style: A2CText.bodyStrong.copyWith(color: A2CColors.error),
+              Semantics(
+                container: true,
+                liveRegion: true,
+                label: _error!,
+                child: ExcludeSemantics(
+                  child: Text(
+                    _error!,
+                    style: A2CText.bodyStrong.copyWith(color: A2CColors.error),
+                  ),
+                ),
               ),
               const SizedBox(height: 12),
             ],
-            const Text('DNI', style: A2CText.label),
-            const SizedBox(height: 8),
             TextFormField(
               controller: _dni,
               keyboardType: TextInputType.number,
@@ -391,6 +383,7 @@ class _CreateUserSheetState extends ConsumerState<_CreateUserSheet> {
                 LengthLimitingTextInputFormatter(8),
               ],
               decoration: const InputDecoration(
+                labelText: 'DNI',
                 hintText: 'Número de documento',
               ),
               validator: (v) => RegExp(r'^\d{8}$').hasMatch(v ?? '')
@@ -398,12 +391,13 @@ class _CreateUserSheetState extends ConsumerState<_CreateUserSheet> {
                   : 'El DNI tiene 8 dígitos',
             ),
             const SizedBox(height: 12),
-            const Text('Nombre completo', style: A2CText.label),
-            const SizedBox(height: 8),
             TextFormField(
               controller: _name,
               textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(hintText: 'Nombre y apellido'),
+              decoration: const InputDecoration(
+                labelText: 'Nombre completo',
+                hintText: 'Nombre y apellido',
+              ),
               validator: (v) => (v ?? '').trim().length >= 3
                   ? null
                   : 'Ingresa el nombre completo',
@@ -416,11 +410,10 @@ class _CreateUserSheetState extends ConsumerState<_CreateUserSheet> {
               onChanged: (r) => setState(() => _role = r),
             ),
             const SizedBox(height: 12),
-            const Text('Contraseña temporal', style: A2CText.label),
-            const SizedBox(height: 8),
             TextFormField(
               controller: _password,
               decoration: InputDecoration(
+                labelText: 'Contraseña temporal',
                 hintText: 'Mínimo 8, con letras y números',
                 suffixIcon: TextButton(
                   onPressed: () =>
@@ -448,6 +441,7 @@ class _CreateUserSheetState extends ConsumerState<_CreateUserSheet> {
               label: 'Guardar',
               onPressed: _save,
               loading: _loading,
+              loadingLabel: 'Guardando usuario',
             ),
           ],
         ),

@@ -3,6 +3,7 @@ import { Prisma, SiteStatus, SiteType } from '@prisma/client';
 import { DomainException } from '../../common/filters/problem-details.filter';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
 import type { AuthUser } from '../auth/auth.types';
 import type { CreateSiteDto, ListSitesQuery, SiteStockQuery, UpdateSiteDto } from './dto/sites.dto';
 import { toSiteView, type SiteSummary, type SiteView } from './site.view';
@@ -11,7 +12,11 @@ const notFound = () => new DomainException('NO_ENCONTRADO', 'Obra no encontrada'
 
 @Injectable()
 export class SitesService {
-  constructor(private readonly prisma: PrismaService, private readonly audit: AuditService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly audit: AuditService,
+    private readonly realtime: RealtimeGateway,
+  ) {}
 
   async list(query: ListSitesQuery): Promise<SiteView[]> {
     const where: Prisma.SiteWhereInput = {
@@ -75,6 +80,7 @@ export class SitesService {
       );
       return created;
     });
+    this.realtime.publish('site.updated', { id: site.id, updatedAt: site.updatedAt.toISOString() });
     return toSiteView(site, emptySummary());
   }
 
@@ -112,6 +118,7 @@ export class SitesService {
       );
       return updated;
     });
+    this.realtime.publish('site.updated', { id: site.id, updatedAt: site.updatedAt.toISOString() });
     const summaries = await this.summaries([id]);
     return toSiteView(site, summaries.get(id)!);
   }
@@ -148,6 +155,7 @@ export class SitesService {
       );
       return updated;
     });
+    this.realtime.publish('site.updated', { id: site.id, updatedAt: site.updatedAt.toISOString() });
     const summaries = await this.summaries([id]);
     return toSiteView(site, summaries.get(id)!);
   }
@@ -176,6 +184,7 @@ export class SitesService {
       );
       return updated;
     });
+    this.realtime.publish('site.updated', { id: site.id, updatedAt: site.updatedAt.toISOString() });
     const summaries = await this.summaries([id]);
     return toSiteView(site, summaries.get(id)!);
   }

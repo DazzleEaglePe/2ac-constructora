@@ -11,6 +11,7 @@ import '../../../shared/widgets/a2c_buttons.dart';
 import '../../../shared/widgets/a2c_cards.dart';
 import '../../../shared/widgets/a2c_chips.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../../../shared/widgets/loading_skeleton.dart';
 import '../../auth/application/session_controller.dart';
 import '../data/sites_repository.dart';
 import '../domain/site.dart';
@@ -62,8 +63,11 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen> {
         ],
       ),
       body: site.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: A2CColors.ink),
+        loading: () => ListView(
+          padding: const EdgeInsets.all(A2CSpace.screen),
+          children: [
+            const A2CLoadingSkeleton(label: 'Cargando el detalle de la obra'),
+          ],
         ),
         error: (error, _) => EmptyState(
           icon: Icons.cloud_off_rounded,
@@ -184,9 +188,10 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen> {
       ...stock.when(
         loading: () => [
           const Padding(
-            padding: EdgeInsets.all(24),
-            child: Center(
-              child: CircularProgressIndicator(color: A2CColors.ink),
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: A2CLoadingSkeleton(
+              label: 'Cargando los activos de esta ubicación',
+              rows: 2,
             ),
           ),
         ],
@@ -207,10 +212,16 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen> {
               .toList(growable: false);
           return filtered.isEmpty
               ? [
-                  const EmptyState(
-                    icon: Icons.inventory_2_outlined,
-                    title: 'Aún no hay activos',
-                    message: 'El stock disponible aparecerá aquí.',
+                  EmptyState(
+                    icon: items.isEmpty
+                        ? Icons.inventory_2_outlined
+                        : Icons.filter_alt_off_outlined,
+                    title: items.isEmpty
+                        ? 'Aún no hay activos'
+                        : 'Sin activos con este filtro',
+                    message: items.isEmpty
+                        ? 'El stock disponible aparecerá aquí.'
+                        : 'Prueba cambiando el filtro para ver el resto del stock.',
                   ),
                 ]
               : [
@@ -224,7 +235,10 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen> {
       const SizedBox(height: 9),
       ...history.when(
         loading: () => [
-          const Center(child: CircularProgressIndicator(color: A2CColors.ink)),
+          const A2CLoadingSkeleton(
+            label: 'Cargando la actividad reciente',
+            rows: 1,
+          ),
         ],
         error: (error, _) => [
           EmptyState(
@@ -240,9 +254,10 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen> {
         ],
         data: (items) => items.isEmpty
             ? [
-                const Text(
-                  'Todavía no hay movimientos.',
-                  style: A2CText.caption,
+                const EmptyState(
+                  icon: Icons.history_toggle_off_rounded,
+                  title: 'Sin actividad',
+                  message: 'Los movimientos de esta ubicación aparecerán aquí.',
                 ),
               ]
             : [

@@ -152,7 +152,7 @@ Dar a la constructora **una sola fuente de verdad** sobre su inventario de activ
 | P2 | ~~Roles~~ → ✅ **Administrador y Operador** (2026-10-04)                      | Seguridad, UX     |
 | P3 | ~~Formato del documento~~ → ✅ **DNI de Perú, 8 dígitos** (2026-10-04)        | Validaciones      |
 | P4 | Volumen estimado: n.º de usuarios, obras simultáneas y activos              | Infraestructura   |
-| P5 | ¿Android, iOS o ambos? ¿Celulares propios de la empresa o personales?       | Despliegue        |
+| P5 | Soporte Android + iOS confirmado el 2026-10-05. ¿Qué celulares físicos —propios de la empresa o personales— se usarán? | Despliegue |
 | P6 | ~~Permisos por obra~~ → ✅ **No hay permisos por obra**; solo los operadores (y administradores) mueven, entre cualquier obra (2026-10-04) | Permisos |
 | P7 | ¿Se necesita registrar valor económico de los activos?                      | Modelo de datos   |
 | P8 | Hosting preferido y presupuesto mensual de infraestructura                  | Arquitectura      |

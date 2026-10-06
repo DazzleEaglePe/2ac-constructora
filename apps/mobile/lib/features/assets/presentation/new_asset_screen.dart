@@ -7,6 +7,7 @@ import '../../../core/theme/a2c_colors.dart';
 import '../../../core/theme/a2c_dimens.dart';
 import '../../../core/theme/a2c_typography.dart';
 import '../../../shared/widgets/a2c_buttons.dart';
+import '../../../shared/widgets/empty_state.dart';
 import '../../sites/data/sites_repository.dart';
 import '../../sites/domain/site.dart';
 import '../data/assets_repository.dart';
@@ -63,7 +64,7 @@ class _NewAssetScreenState extends ConsumerState<NewAssetScreen> {
             initialQuantity: _type == 'MAQUINA' ? 1 : int.parse(_quantity.text),
             initialSiteId: _siteId!,
           );
-      ref.invalidate(assetsListProvider);
+      invalidateWidgetAssetCatalog(ref);
       ref.invalidate(sitesListProvider);
       if (mounted) context.pop(true);
     } on ApiFailure catch (error) {
@@ -133,21 +134,41 @@ class _NewAssetScreenState extends ConsumerState<NewAssetScreen> {
               const Text('CÓDIGO', style: A2CText.overline),
               const SizedBox(height: 7),
               code.when(
-                loading: () =>
-                    const LinearProgressIndicator(color: A2CColors.ink),
-                error: (_, _) =>
-                    const Text('No se pudo consultar el código siguiente'),
+                loading: () => const LinearProgressIndicator(
+                  color: A2CColors.ink,
+                  semanticsLabel: 'Consultando el código del activo',
+                ),
+                error: (_, _) => Row(
+                  children: [
+                    Expanded(
+                      child: Semantics(
+                        container: true,
+                        liveRegion: true,
+                        label: 'No se pudo consultar el código siguiente',
+                        child: const ExcludeSemantics(
+                          child: Text(
+                            'No se pudo consultar el código siguiente',
+                          ),
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () =>
+                          ref.invalidate(nextAssetCodeProvider(_type)),
+                      child: const Text('Reintentar'),
+                    ),
+                  ],
+                ),
                 data: (value) =>
                     Text(value, style: A2CText.code.copyWith(fontSize: 17)),
               ),
               const SizedBox(height: 18),
-              const Text('NOMBRE', style: A2CText.overline),
-              const SizedBox(height: 7),
               TextFormField(
                 controller: _name,
                 textCapitalization: TextCapitalization.sentences,
                 textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(
+                  labelText: 'Nombre del activo',
                   hintText: 'Ej. Amoladora angular 4½"',
                 ),
                 validator: (value) => value == null || value.trim().length < 2
@@ -155,25 +176,23 @@ class _NewAssetScreenState extends ConsumerState<NewAssetScreen> {
                     : null,
               ),
               const SizedBox(height: 16),
-              const Text('DESCRIPCIÓN', style: A2CText.overline),
-              const SizedBox(height: 7),
               TextFormField(
                 controller: _description,
                 minLines: 2,
                 maxLines: 4,
                 textCapitalization: TextCapitalization.sentences,
                 decoration: const InputDecoration(
+                  labelText: 'Descripción (opcional)',
                   hintText: 'Marca, modelo, capacidad u otros detalles',
                 ),
               ),
               if (_type == 'HERRAMIENTA') ...[
                 const SizedBox(height: 16),
-                const Text('STOCK INICIAL', style: A2CText.overline),
-                const SizedBox(height: 7),
                 TextFormField(
                   controller: _quantity,
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(
+                    labelText: 'Stock inicial',
                     hintText: 'Cantidad de unidades',
                   ),
                   validator: (value) {
@@ -193,23 +212,34 @@ class _NewAssetScreenState extends ConsumerState<NewAssetScreen> {
                 ),
               ],
               const SizedBox(height: 16),
-              const Text('UBICACIÓN INICIAL', style: A2CText.overline),
-              const SizedBox(height: 7),
               sites.when(
-                loading: () =>
-                    const LinearProgressIndicator(color: A2CColors.ink),
-                error: (error, _) => Text(
-                  error is ApiFailure
+                loading: () => const LinearProgressIndicator(
+                  color: A2CColors.ink,
+                  semanticsLabel: 'Cargando las ubicaciones disponibles',
+                ),
+                error: (error, _) => EmptyState(
+                  icon: Icons.cloud_off_rounded,
+                  title: 'No se pudieron cargar las ubicaciones',
+                  message: error is ApiFailure
                       ? error.message
-                      : 'No se pudieron cargar las ubicaciones',
+                      : 'Inténtalo de nuevo.',
+                  actionLabel: 'Reintentar',
+                  onAction: () => ref.invalidate(sitesListProvider),
                 ),
                 data: (list) => _sitePicker(list),
               ),
               if (_error != null) ...[
                 const SizedBox(height: 16),
-                Text(
-                  _error!.message,
-                  style: const TextStyle(color: A2CColors.error),
+                Semantics(
+                  container: true,
+                  liveRegion: true,
+                  label: _error!.message,
+                  child: ExcludeSemantics(
+                    child: Text(
+                      _error!.message,
+                      style: const TextStyle(color: A2CColors.error),
+                    ),
+                  ),
                 ),
               ],
               const SizedBox(height: 28),
@@ -217,6 +247,7 @@ class _NewAssetScreenState extends ConsumerState<NewAssetScreen> {
                 label: 'Guardar activo',
                 icon: Icons.add_rounded,
                 loading: _saving,
+                loadingLabel: 'Guardando activo',
                 onPressed: _save,
               ),
             ],
@@ -233,9 +264,20 @@ class _NewAssetScreenState extends ConsumerState<NewAssetScreen> {
     if (_siteId != null && !active.any((site) => site.id == _siteId)) {
       _siteId = null;
     }
+    if (active.isEmpty) {
+      return EmptyState(
+        icon: Icons.location_off_outlined,
+        title: 'No hay ubicaciones activas',
+        message:
+            'Crea una obra o abre el almacén antes de dar de alta un activo.',
+        actionLabel: 'Crear obra',
+        onAction: () => context.push('/sites/new'),
+      );
+    }
     return DropdownButtonFormField<String>(
       initialValue: _siteId,
       decoration: const InputDecoration(
+        labelText: 'Ubicación inicial',
         hintText: 'Selecciona una obra o almacén',
       ),
       items: [

@@ -5,25 +5,34 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_failure.dart';
 import '../../../core/network/dio_client.dart';
+import '../../../core/storage/cached_json.dart';
+import '../../../core/storage/local_database.dart';
 import '../domain/movement.dart';
 
 class MovementsRepository {
-  MovementsRepository(this._dio);
+  MovementsRepository(this._dio, [this._database]);
   final Dio _dio;
+  final LocalDatabase? _database;
 
-  Future<List<Movement>> history({String? assetId, String? siteId}) =>
-      guardApi(() async {
-        final query = <String, dynamic>{};
-        if (assetId != null) query['assetId'] = assetId;
-        if (siteId != null) query['siteId'] = siteId;
-        final response = await _dio.get<List<dynamic>>(
-          '/movements',
-          queryParameters: query,
-        );
-        return (response.data ?? const [])
-            .map((row) => Movement.fromJson(row as Map<String, dynamic>))
-            .toList(growable: false);
-      });
+  Future<List<Movement>> history({
+    String? assetId,
+    String? siteId,
+  }) => guardApi(() async {
+    final query = <String, dynamic>{};
+    if (assetId != null) query['assetId'] = assetId;
+    if (siteId != null) query['siteId'] = siteId;
+    final body = await getCachedJson(
+      dio: _dio,
+      database: _database,
+      key:
+          'movements:${query.entries.toList()..sort((a, b) => a.key.compareTo(b.key))}',
+      path: '/movements',
+      queryParameters: query.cast<String, Object?>(),
+    );
+    return ((body as List<dynamic>?) ?? const [])
+        .map((row) => Movement.fromJson(row as Map<String, dynamic>))
+        .toList(growable: false);
+  });
 
   Future<void> transfer({
     required String assetId,
@@ -33,10 +42,13 @@ class MovementsRepository {
     String? note,
     String? observationType,
     String? observationDescription,
+    String? idempotencyKey,
   }) => guardApi(() async {
     await _dio.post<Map<String, dynamic>>(
       '/movements',
-      options: Options(headers: {'Idempotency-Key': _uuidV4()}),
+      options: Options(
+        headers: {'Idempotency-Key': idempotencyKey ?? newIdempotencyKey()},
+      ),
       data: {
         'assetId': assetId,
         'fromSiteId': fromSiteId,
@@ -63,7 +75,7 @@ class MovementsRepository {
   Future<void> revert(String movementId) => guardApi(() async {
     await _dio.post<Map<String, dynamic>>(
       '/movements/$movementId/revert',
-      options: Options(headers: {'Idempotency-Key': _uuidV4()}),
+      options: Options(headers: {'Idempotency-Key': newIdempotencyKey()}),
     );
   });
 
@@ -78,7 +90,7 @@ class MovementsRepository {
   });
 }
 
-String _uuidV4() {
+String newIdempotencyKey() {
   final random = Random.secure();
   final bytes = List<int>.generate(16, (_) => random.nextInt(256));
   bytes[6] = (bytes[6] & 0x0f) | 0x40;
@@ -90,7 +102,10 @@ String _uuidV4() {
 }
 
 final movementsRepositoryProvider = Provider<MovementsRepository>(
-  (ref) => MovementsRepository(ref.watch(dioProvider)),
+  (ref) => MovementsRepository(
+    ref.watch(dioProvider),
+    ref.watch(localDatabaseProvider),
+  ),
 );
 
 final assetMovementHistoryProvider = FutureProvider.autoDispose
@@ -105,6 +120,7 @@ final siteMovementHistoryProvider = FutureProvider.autoDispose
           ref.watch(movementsRepositoryProvider).history(siteId: siteId),
     );
 
-final openObservationsProvider = FutureProvider.autoDispose<List<OpenObservation>>(
-  (ref) => ref.watch(movementsRepositoryProvider).openObservations(),
-);
+final openObservationsProvider =
+    FutureProvider.autoDispose<List<OpenObservation>>(
+      (ref) => ref.watch(movementsRepositoryProvider).openObservations(),
+    );

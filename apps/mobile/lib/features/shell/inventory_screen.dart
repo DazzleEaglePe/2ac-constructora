@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -13,6 +15,7 @@ import '../../shared/domain/asset_status.dart';
 import '../../shared/widgets/a2c_cards.dart';
 import '../../shared/widgets/a2c_chips.dart';
 import '../../shared/widgets/empty_state.dart';
+import '../../shared/widgets/loading_skeleton.dart';
 
 class InventoryScreen extends ConsumerStatefulWidget {
   const InventoryScreen({super.key});
@@ -23,25 +26,42 @@ class InventoryScreen extends ConsumerStatefulWidget {
 
 class _InventoryScreenState extends ConsumerState<InventoryScreen> {
   final _search = TextEditingController();
+  Timer? _searchDebounce;
+  bool _loadingMore = false;
   String _type = 'TODOS';
   String _status = 'TODOS';
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _search.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final assets = ref.watch(assetsListProvider);
+    ref.listen<AssetSearchQuery>(assetSearchQueryProvider, (_, query) {
+      if (query.q != _search.text ||
+          query.type != (_type == 'TODOS' ? null : _type) ||
+          query.status != (_status == 'TODOS' ? null : _status)) {
+        _search.value = TextEditingValue(
+          text: query.q,
+          selection: TextSelection.collapsed(offset: query.q.length),
+        );
+        setState(() {
+          _type = query.type ?? 'TODOS';
+          _status = query.status ?? 'TODOS';
+        });
+      }
+    });
+    final assets = ref.watch(inventoryAssetsProvider);
     final isAdmin = ref.watch(currentUserProvider)?.isAdmin ?? false;
     return Scaffold(
       body: SafeArea(
         bottom: false,
         child: RefreshIndicator(
           color: A2CColors.ink,
-          onRefresh: () => ref.refresh(assetsListProvider.future),
+          onRefresh: () => ref.refresh(inventoryAssetsProvider.future),
           child: ListView(
             padding: const EdgeInsets.fromLTRB(
               A2CSpace.screen,
@@ -62,7 +82,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
               const SizedBox(height: 18),
               TextField(
                 controller: _search,
-                onChanged: (_) => setState(() {}),
+                onChanged: _onSearchChanged,
                 decoration: InputDecoration(
                   hintText: 'Buscar por nombre o código',
                   prefixIcon: const Icon(Icons.search_rounded),
@@ -73,6 +93,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                           onPressed: () {
                             _search.clear();
                             setState(() {});
+                            _updateQuery();
                           },
                           icon: const Icon(Icons.close_rounded),
                         ),
@@ -83,11 +104,9 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
               const SizedBox(height: 16),
               ...assets.when(
                 loading: () => [
-                  const Padding(
-                    padding: EdgeInsets.all(40),
-                    child: Center(
-                      child: CircularProgressIndicator(color: A2CColors.ink),
-                    ),
+                  const A2CLoadingSkeleton(
+                    label: 'Cargando el inventario',
+                    rows: 4,
                   ),
                 ],
                 error: (error, _) => [
@@ -98,7 +117,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                         ? error.message
                         : 'Revisa la conexión e inténtalo de nuevo.',
                     actionLabel: 'Reintentar',
-                    onAction: () => ref.invalidate(assetsListProvider),
+                    onAction: () => ref.invalidate(inventoryAssetsProvider),
                   ),
                 ],
                 data: _assetRows,
@@ -116,8 +135,23 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
               child: const Icon(Icons.add_rounded),
             )
           : null,
+      floatingActionButtonLocation: const _InventoryFabLocation(),
     );
   }
+
+  void _onSearchChanged(String value) {
+    setState(() {});
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 300), _updateQuery);
+  }
+
+  void _updateQuery() => ref
+      .read(assetSearchQueryProvider.notifier)
+      .update(
+        q: _search.text.trim(),
+        type: _type == 'TODOS' ? null : _type,
+        status: _status == 'TODOS' ? null : _status,
+      );
 
   Widget _filters() => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -133,7 +167,10 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
             ChoiceChip(
               label: Text(label),
               selected: _type == key,
-              onSelected: (_) => setState(() => _type = key),
+              onSelected: (_) {
+                setState(() => _type = key);
+                _updateQuery();
+              },
               selectedColor: A2CColors.brandYellow,
               showCheckmark: false,
               labelStyle: A2CText.label,
@@ -153,7 +190,10 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
             ChoiceChip(
               label: Text(label),
               selected: _status == key,
-              onSelected: (_) => setState(() => _status = key),
+              onSelected: (_) {
+                setState(() => _status = key);
+                _updateQuery();
+              },
               selectedColor: A2CColors.brandYellow,
               showCheckmark: false,
               labelStyle: A2CText.caption,
@@ -163,24 +203,18 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
     ],
   );
 
-  List<Widget> _assetRows(List<Asset> assets) {
-    final query = _search.text.trim().toLowerCase();
-    final filtered = assets
-        .where(
-          (asset) =>
-              (query.isEmpty ||
-                  asset.name.toLowerCase().contains(query) ||
-                  asset.code.toLowerCase().contains(query)) &&
-              (_type == 'TODOS' || asset.type == _type) &&
-              (_status == 'TODOS' || asset.status == _status),
-        )
-        .toList(growable: false);
-    if (filtered.isEmpty) {
+  List<Widget> _assetRows(AssetPage page) {
+    final assets = page.assets;
+    if (assets.isEmpty) {
+      final hasFilter =
+          _search.text.trim().isNotEmpty ||
+          _type != 'TODOS' ||
+          _status != 'TODOS';
       return [
         EmptyState(
           icon: Icons.inventory_2_outlined,
-          title: assets.isEmpty ? 'Aún no hay activos' : 'Sin resultados',
-          message: assets.isEmpty
+          title: hasFilter ? 'Sin resultados' : 'Aún no hay activos',
+          message: !hasFilter
               ? 'Las herramientas y máquinas registradas aparecerán aquí con su stock y ubicación.'
               : 'Prueba cambiando la búsqueda o los filtros.',
         ),
@@ -188,16 +222,59 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
     }
     return [
       Text(
-        '${filtered.length} ${filtered.length == 1 ? 'activo' : 'activos'}',
+        page.nextCursor == null
+            ? '${assets.length} ${assets.length == 1 ? 'activo' : 'activos'}'
+            : 'Mostrando ${assets.length} activos',
         style: A2CText.caption,
       ),
       const SizedBox(height: 8),
-      for (final asset in filtered) ...[
+      for (final asset in assets) ...[
         _AssetRow(asset: asset),
         const SizedBox(height: 9),
       ],
+      if (page.nextCursor != null)
+        OutlinedButton.icon(
+          onPressed: _loadingMore ? null : _loadMore,
+          icon: _loadingMore
+              ? const SizedBox.square(
+                  dimension: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    semanticsLabel: 'Cargando más activos',
+                  ),
+                )
+              : const Icon(Icons.expand_more_rounded),
+          label: Text(_loadingMore ? 'Cargando…' : 'Cargar más activos'),
+        ),
     ];
   }
+
+  Future<void> _loadMore() async {
+    setState(() => _loadingMore = true);
+    try {
+      await ref.read(inventoryAssetsProvider.notifier).loadMore();
+    } on Object catch (error) {
+      if (mounted) {
+        final message = error is ApiFailure
+            ? error.message
+            : 'No se pudieron cargar más activos. Inténtalo de nuevo.';
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(message)));
+      }
+    } finally {
+      if (mounted) setState(() => _loadingMore = false);
+    }
+  }
+}
+
+class _InventoryFabLocation extends FloatingActionButtonLocation {
+  const _InventoryFabLocation();
+
+  @override
+  Offset getOffset(ScaffoldPrelayoutGeometry geometry) =>
+      FloatingActionButtonLocation.endFloat
+          .getOffset(geometry)
+          .translate(0, -A2CSpace.bottomNavClearance);
 }
 
 class _AssetRow extends StatelessWidget {

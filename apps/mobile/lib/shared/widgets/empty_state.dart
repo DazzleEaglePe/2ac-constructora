@@ -32,19 +32,30 @@ class EmptyState extends StatelessWidget {
     ),
     child: Column(
       children: [
-        CircleAvatar(
-          radius: 26,
-          backgroundColor: A2CColors.brandYellowSoft,
-          foregroundColor: A2CColors.ink,
-          child: Icon(icon),
-        ),
-        const SizedBox(height: 12),
-        Text(title, style: A2CText.title, textAlign: TextAlign.center),
-        const SizedBox(height: 4),
-        Text(
-          message,
-          style: A2CText.label.copyWith(fontSize: 14),
-          textAlign: TextAlign.center,
+        Semantics(
+          container: true,
+          liveRegion: true,
+          label: '$title. $message',
+          child: ExcludeSemantics(
+            child: Column(
+              children: [
+                CircleAvatar(
+                  radius: 26,
+                  backgroundColor: A2CColors.brandYellowSoft,
+                  foregroundColor: A2CColors.ink,
+                  child: Icon(icon),
+                ),
+                const SizedBox(height: 12),
+                Text(title, style: A2CText.title, textAlign: TextAlign.center),
+                const SizedBox(height: 4),
+                Text(
+                  message,
+                  style: A2CText.label.copyWith(fontSize: 14),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
         ),
         if (actionLabel != null && onAction != null) ...[
           const SizedBox(height: 16),

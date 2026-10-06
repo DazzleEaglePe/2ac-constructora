@@ -18,6 +18,9 @@ abstract final class A2CSpace {
 
   /// Margen lateral de las pantallas.
   static const screen = 16.0;
+
+  /// Espacio para que las acciones flotantes queden sobre la navegación.
+  static const bottomNavClearance = 104.0;
 }
 
 abstract final class A2CSizes {

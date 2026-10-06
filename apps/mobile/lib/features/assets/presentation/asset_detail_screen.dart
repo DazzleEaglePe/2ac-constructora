@@ -10,6 +10,7 @@ import '../../../shared/domain/asset_status.dart';
 import '../../../shared/widgets/a2c_cards.dart';
 import '../../../shared/widgets/a2c_chips.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../../../shared/widgets/loading_skeleton.dart';
 import '../data/assets_repository.dart';
 import '../domain/asset.dart';
 import '../../movements/data/movements_repository.dart';
@@ -87,8 +88,11 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
         ],
       ),
       body: asset.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: A2CColors.ink),
+        loading: () => ListView(
+          padding: const EdgeInsets.all(A2CSpace.screen),
+          children: [
+            const A2CLoadingSkeleton(label: 'Cargando el detalle del activo'),
+          ],
         ),
         error: (error, _) => EmptyState(
           icon: Icons.cloud_off_rounded,
@@ -184,13 +188,21 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
       const SizedBox(height: 9),
       ...history.when(
         loading: () => [
-          const Center(child: CircularProgressIndicator(color: A2CColors.ink)),
+          const A2CLoadingSkeleton(
+            label: 'Cargando el historial de movimientos',
+            rows: 1,
+          ),
         ],
         error: (error, _) => [
-          Text(
-            error is ApiFailure
+          EmptyState(
+            icon: Icons.cloud_off_rounded,
+            title: 'No se pudo cargar el historial',
+            message: error is ApiFailure
                 ? error.message
-                : 'No se pudo cargar el historial.',
+                : 'Inténtalo de nuevo.',
+            actionLabel: 'Reintentar',
+            onAction: () =>
+                ref.invalidate(assetMovementHistoryProvider(asset.id)),
           ),
         ],
         data: (items) {
@@ -200,9 +212,10 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
               .toSet();
           return items.isEmpty
               ? [
-                  const Text(
-                    'Todavía no hay movimientos.',
-                    style: A2CText.caption,
+                  const EmptyState(
+                    icon: Icons.history_toggle_off_rounded,
+                    title: 'Sin movimientos',
+                    message: 'Los movimientos de este activo aparecerán aquí.',
                   ),
                 ]
               : [
@@ -247,13 +260,20 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
       const SizedBox(height: 7),
       ...notes.when(
         loading: () => [
-          const Center(child: CircularProgressIndicator(color: A2CColors.ink)),
+          const A2CLoadingSkeleton(
+            label: 'Cargando las notas del activo',
+            rows: 1,
+          ),
         ],
         error: (error, _) => [
-          Text(
-            error is ApiFailure
+          EmptyState(
+            icon: Icons.cloud_off_rounded,
+            title: 'No se pudieron cargar las notas',
+            message: error is ApiFailure
                 ? error.message
-                : 'No se pudieron cargar las notas.',
+                : 'Inténtalo de nuevo.',
+            actionLabel: 'Reintentar',
+            onAction: () => ref.invalidate(assetNotesProvider(asset.id)),
           ),
         ],
         data: (items) => items.isEmpty
@@ -279,7 +299,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
       _note.clear();
       ref.invalidate(assetNotesProvider(asset.id));
       ref.invalidate(assetDetailProvider(asset.id));
-      ref.invalidate(assetsListProvider);
+      invalidateWidgetAssetCatalog(ref);
     } on ApiFailure catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context)
@@ -440,7 +460,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
 
   void _refreshAsset(String id) {
     ref.invalidate(assetDetailProvider(id));
-    ref.invalidate(assetsListProvider);
+    invalidateWidgetAssetCatalog(ref);
   }
 
   String _statusLabel(String status) => switch (status) {
@@ -529,7 +549,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
       await ref.read(movementsRepositoryProvider).revert(movement.id);
       ref.invalidate(assetMovementHistoryProvider(assetId));
       ref.invalidate(assetDetailProvider(assetId));
-      ref.invalidate(assetsListProvider);
+      invalidateWidgetAssetCatalog(ref);
       ref.invalidate(sitesListProvider);
       if (movement.from != null) {
         ref.invalidate(siteDetailProvider(movement.from!.id));

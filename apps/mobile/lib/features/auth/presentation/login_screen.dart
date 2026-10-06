@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 
 import '../../../core/network/api_failure.dart';
 import '../../../core/theme/a2c_colors.dart';
-import '../../../core/theme/a2c_dimens.dart';
 import '../../../core/theme/a2c_typography.dart';
 import '../../../shared/widgets/a2c_buttons.dart';
 import '../application/session_controller.dart';
@@ -210,8 +209,6 @@ class _LoginSheet extends StatelessWidget {
                 InlineError(message: error!.message, detail: errorDetail),
                 const SizedBox(height: 14),
               ],
-              const Text('DNI', style: A2CText.label),
-              const SizedBox(height: A2CSpace.sm),
               TextFormField(
                 controller: dni,
                 keyboardType: TextInputType.number,
@@ -222,6 +219,7 @@ class _LoginSheet extends StatelessWidget {
                   LengthLimitingTextInputFormatter(8),
                 ],
                 decoration: const InputDecoration(
+                  labelText: 'DNI',
                   hintText: 'Número de documento',
                 ),
                 validator: (v) => RegExp(r'^\d{8}$').hasMatch(v ?? '')
@@ -229,8 +227,6 @@ class _LoginSheet extends StatelessWidget {
                     : 'El DNI tiene 8 dígitos',
               ),
               const SizedBox(height: 14),
-              const Text('Contraseña', style: A2CText.label),
-              const SizedBox(height: A2CSpace.sm),
               TextFormField(
                 controller: password,
                 obscureText: obscure,
@@ -238,6 +234,7 @@ class _LoginSheet extends StatelessWidget {
                 autofillHints: const [AutofillHints.password],
                 onFieldSubmitted: (_) => onSubmit(),
                 decoration: InputDecoration(
+                  labelText: 'Contraseña',
                   hintText: 'Tu contraseña',
                   suffixIcon: IconButton(
                     onPressed: onToggleObscure,
@@ -260,6 +257,7 @@ class _LoginSheet extends StatelessWidget {
                 label: 'Ingresar',
                 onPressed: onSubmit,
                 loading: loading,
+                loadingLabel: 'Ingresando',
               ),
               const SizedBox(height: 12),
               const Text(

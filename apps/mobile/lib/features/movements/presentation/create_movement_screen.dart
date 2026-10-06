@@ -6,6 +6,7 @@ import '../../../core/network/api_failure.dart';
 import '../../../core/theme/a2c_colors.dart';
 import '../../../core/theme/a2c_dimens.dart';
 import '../../../core/theme/a2c_typography.dart';
+import '../../../core/storage/offline_movements.dart';
 import '../../../features/assets/data/assets_repository.dart';
 import '../../../features/assets/domain/asset.dart';
 import '../../../features/auth/application/session_controller.dart';
@@ -13,6 +14,7 @@ import '../../../features/sites/data/sites_repository.dart';
 import '../../../features/sites/domain/site.dart';
 import '../../../shared/widgets/a2c_buttons.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../../../shared/widgets/loading_skeleton.dart';
 import '../data/movements_repository.dart';
 
 class CreateMovementScreen extends ConsumerStatefulWidget {
@@ -66,8 +68,13 @@ class _CreateMovementScreenState extends ConsumerState<CreateMovementScreen> {
         ),
       ),
       body: asset.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: A2CColors.ink),
+        loading: () => ListView(
+          padding: const EdgeInsets.all(A2CSpace.screen),
+          children: [
+            const A2CLoadingSkeleton(
+              label: 'Cargando los datos del movimiento',
+            ),
+          ],
         ),
         error: (error, _) => EmptyState(
           icon: Icons.cloud_off_rounded,
@@ -77,8 +84,11 @@ class _CreateMovementScreenState extends ConsumerState<CreateMovementScreen> {
           onAction: () => ref.invalidate(assetDetailProvider(widget.assetId)),
         ),
         data: (value) => sites.when(
-          loading: () => const Center(
-            child: CircularProgressIndicator(color: A2CColors.ink),
+          loading: () => ListView(
+            padding: const EdgeInsets.all(A2CSpace.screen),
+            children: [
+              const A2CLoadingSkeleton(label: 'Cargando las ubicaciones'),
+            ],
           ),
           error: (error, _) => EmptyState(
             icon: Icons.cloud_off_rounded,
@@ -162,11 +172,12 @@ class _CreateMovementScreenState extends ConsumerState<CreateMovementScreen> {
             style: A2CText.code,
           ),
           const SizedBox(height: 20),
-          const Text('ORIGEN', style: A2CText.overline),
-          const SizedBox(height: 7),
           DropdownButtonFormField<String>(
             initialValue: _fromSiteId,
-            decoration: const InputDecoration(hintText: 'Selecciona el origen'),
+            decoration: const InputDecoration(
+              labelText: 'Origen',
+              hintText: 'Selecciona la ubicación de origen',
+            ),
             items: [
               for (final row in available)
                 DropdownMenuItem(
@@ -184,11 +195,10 @@ class _CreateMovementScreenState extends ConsumerState<CreateMovementScreen> {
             }),
           ),
           const SizedBox(height: 15),
-          const Text('DESTINO', style: A2CText.overline),
-          const SizedBox(height: 7),
           DropdownButtonFormField<String>(
             initialValue: _toSiteId,
             decoration: const InputDecoration(
+              labelText: 'Destino',
               hintText: 'Selecciona el destino',
             ),
             items: [
@@ -209,12 +219,13 @@ class _CreateMovementScreenState extends ConsumerState<CreateMovementScreen> {
           ),
           if (asset.type == 'HERRAMIENTA') ...[
             const SizedBox(height: 15),
-            const Text('CANTIDAD', style: A2CText.overline),
-            const SizedBox(height: 7),
             TextFormField(
               controller: _quantity,
               keyboardType: TextInputType.number,
-              decoration: InputDecoration(hintText: '1 a $availableQuantity'),
+              decoration: InputDecoration(
+                labelText: 'Cantidad',
+                hintText: '1 a $availableQuantity',
+              ),
               validator: (value) {
                 final count = int.tryParse(value ?? '');
                 return count == null || count < 1 || count > availableQuantity
@@ -230,8 +241,6 @@ class _CreateMovementScreenState extends ConsumerState<CreateMovementScreen> {
             ),
           ],
           const SizedBox(height: 15),
-          const Text('NOTA (OPCIONAL)', style: A2CText.overline),
-          const SizedBox(height: 7),
           TextField(
             controller: _note,
             minLines: 1,
@@ -239,6 +248,7 @@ class _CreateMovementScreenState extends ConsumerState<CreateMovementScreen> {
             maxLength: 500,
             textCapitalization: TextCapitalization.sentences,
             decoration: const InputDecoration(
+              labelText: 'Nota (opcional)',
               hintText: 'Ej. Sale con accesorios completos',
             ),
           ),
@@ -277,6 +287,7 @@ class _CreateMovementScreenState extends ConsumerState<CreateMovementScreen> {
               maxLines: 3,
               textCapitalization: TextCapitalization.sentences,
               decoration: const InputDecoration(
+                labelText: 'Descripción de la observación',
                 hintText: 'Describe lo observado',
               ),
               validator: (value) =>
@@ -287,9 +298,16 @@ class _CreateMovementScreenState extends ConsumerState<CreateMovementScreen> {
           ],
           if (_error != null) ...[
             const SizedBox(height: 12),
-            Text(
-              _error!.message,
-              style: const TextStyle(color: A2CColors.error),
+            Semantics(
+              container: true,
+              liveRegion: true,
+              label: _error!.message,
+              child: ExcludeSemantics(
+                child: Text(
+                  _error!.message,
+                  style: const TextStyle(color: A2CColors.error),
+                ),
+              ),
             ),
           ],
           const SizedBox(height: 24),
@@ -297,6 +315,7 @@ class _CreateMovementScreenState extends ConsumerState<CreateMovementScreen> {
             label: 'Continuar',
             icon: Icons.arrow_forward_rounded,
             loading: _sending,
+            loadingLabel: 'Registrando movimiento',
             onPressed: () => _confirm(asset, sites, destination),
           ),
         ],
@@ -338,6 +357,20 @@ class _CreateMovementScreenState extends ConsumerState<CreateMovementScreen> {
       ),
     );
     if (confirmed != true || !mounted) return;
+    final idempotencyKey = newIdempotencyKey();
+    final payload = <String, Object?>{
+      'assetId': asset.id,
+      'assetName': asset.name,
+      'assetCode': asset.code,
+      'fromSiteId': _fromSiteId!,
+      'toSiteId': _toSiteId!,
+      'quantity': quantity,
+      'note': _note.text,
+      'observationType': _reportObservation ? _observationType : null,
+      'observationDescription': _reportObservation
+          ? _observationDescription.text
+          : null,
+    };
     setState(() {
       _sending = true;
       _error = null;
@@ -355,8 +388,9 @@ class _CreateMovementScreenState extends ConsumerState<CreateMovementScreen> {
             observationDescription: _reportObservation
                 ? _observationDescription.text
                 : null,
+            idempotencyKey: idempotencyKey,
           );
-      ref.invalidate(assetsListProvider);
+      invalidateWidgetAssetCatalog(ref);
       ref.invalidate(assetDetailProvider(asset.id));
       ref.invalidate(assetMovementHistoryProvider(asset.id));
       ref.invalidate(sitesListProvider);
@@ -373,6 +407,27 @@ class _CreateMovementScreenState extends ConsumerState<CreateMovementScreen> {
         context.pop(true);
       }
     } on ApiFailure catch (error) {
+      if (error.code == ApiFailure.offline.code) {
+        final userId = ref.read(currentUserProvider)?.id;
+        if (userId != null) {
+          await ref
+              .read(offlineMovementQueueProvider)
+              .enqueue(
+                ownerId: userId,
+                payload: payload,
+                idempotencyKey: idempotencyKey,
+              );
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Sin conexión. El movimiento quedó pendiente.'),
+              ),
+            );
+            context.pop(true);
+          }
+          return;
+        }
+      }
       if (error.code == 'STOCK_INSUFICIENTE') {
         ref.invalidate(assetDetailProvider(widget.assetId));
       }

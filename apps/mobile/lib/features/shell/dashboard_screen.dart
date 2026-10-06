@@ -6,14 +6,17 @@ import '../../core/network/api_failure.dart';
 import '../../core/theme/a2c_colors.dart';
 import '../../core/theme/a2c_dimens.dart';
 import '../../core/theme/a2c_typography.dart';
+import '../../features/assets/data/assets_repository.dart';
 import '../../features/auth/application/session_controller.dart';
 import '../../features/dashboard/data/dashboard_repository.dart';
 import '../../features/dashboard/domain/dashboard_data.dart';
 import '../../features/movements/data/movements_repository.dart';
 import '../../features/movements/domain/movement.dart';
 import '../../features/sites/domain/site.dart';
+import '../realtime/realtime_provider.dart';
 import '../../shared/widgets/a2c_buttons.dart';
 import '../../shared/widgets/empty_state.dart';
+import '../../shared/widgets/loading_skeleton.dart';
 import '../../shared/widgets/a2c_cards.dart';
 import '../auth/domain/app_user.dart';
 
@@ -25,6 +28,7 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentUserProvider);
     final dashboard = ref.watch(dashboardProvider);
+    final recentlyUpdatedSites = ref.watch(recentSiteUpdatesProvider);
     final firstName = user?.fullName.split(' ').first ?? '';
     final hour = DateTime.now().hour;
     final greeting = hour < 12
@@ -59,6 +63,8 @@ class DashboardScreen extends ConsumerWidget {
                     ),
                   ),
                   const Spacer(),
+                  const _LiveIndicator(),
+                  const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 14,
@@ -125,13 +131,51 @@ class DashboardScreen extends ConsumerWidget {
                     ),
                 ],
               ),
+              const SizedBox(height: 14),
+              TextField(
+                textInputAction: TextInputAction.search,
+                onSubmitted: (value) {
+                  final query = value.trim();
+                  ref
+                      .read(assetSearchQueryProvider.notifier)
+                      .update(q: query, type: null, status: null);
+                  context.go('/inventory');
+                },
+                decoration: InputDecoration(
+                  hintText: 'Buscar herramienta o código',
+                  prefixIcon: const Icon(Icons.search_rounded),
+                  suffixIcon: IconButton(
+                    tooltip: 'Abrir inventario',
+                    onPressed: () => context.go('/inventory'),
+                    icon: const Icon(Icons.arrow_forward_rounded),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                children: [
+                  ActionChip(
+                    avatar: const Icon(Icons.inventory_2_outlined, size: 18),
+                    label: const Text('Ver inventario'),
+                    onPressed: () => context.go('/inventory'),
+                  ),
+                  if (user?.isAdmin ?? false)
+                    ActionChip(
+                      avatar: const Icon(Icons.add_rounded, size: 18),
+                      label: const Text('Agregar activo'),
+                      onPressed: () => context.push('/inventory/assets/new'),
+                    ),
+                ],
+              ),
               const SizedBox(height: 20),
               ...dashboard.when(
                 loading: () => [
-                  const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(36),
-                      child: CircularProgressIndicator(color: A2CColors.ink),
+                  const Padding(
+                    padding: EdgeInsets.only(top: 12),
+                    child: A2CLoadingSkeleton(
+                      label: 'Cargando el panel y las obras',
+                      rows: 3,
                     ),
                   ),
                 ],
@@ -153,10 +197,15 @@ class DashboardScreen extends ConsumerWidget {
                     const _OpenObservations(),
                   ],
                   const SizedBox(height: 18),
-                  ..._siteList(context, [
-                    ...data.sites,
-                    if (data.warehouse != null) data.warehouse!,
-                  ], user),
+                  ..._siteList(
+                    context,
+                    [
+                      ...data.sites,
+                      if (data.warehouse != null) data.warehouse!,
+                    ],
+                    user,
+                    recentlyUpdatedSites,
+                  ),
                 ],
               ),
             ],
@@ -170,6 +219,7 @@ class DashboardScreen extends ConsumerWidget {
     BuildContext context,
     List<Site> sites,
     AppUser? user,
+    Set<String> recentlyUpdatedSites,
   ) {
     final warehouse = sites.where((site) => site.isWarehouse).firstOrNull;
     final projects = sites.where((site) => !site.isWarehouse).toList();
@@ -184,7 +234,11 @@ class DashboardScreen extends ConsumerWidget {
     }
     return [
       if (warehouse != null) ...[
-        _SiteCard(site: warehouse, featured: true),
+        _SiteCard(
+          site: warehouse,
+          featured: true,
+          recentlyUpdated: recentlyUpdatedSites.contains(warehouse.id),
+        ),
         const SizedBox(height: 22),
       ],
       if (projects.isNotEmpty) ...[
@@ -199,7 +253,10 @@ class DashboardScreen extends ConsumerWidget {
         ),
         const SizedBox(height: 10),
         for (final site in projects) ...[
-          _SiteCard(site: site),
+          _SiteCard(
+            site: site,
+            recentlyUpdated: recentlyUpdatedSites.contains(site.id),
+          ),
           const SizedBox(height: 10),
         ],
       ] else if (user?.isAdmin ?? false) ...[
@@ -210,6 +267,39 @@ class DashboardScreen extends ConsumerWidget {
         ),
       ],
     ];
+  }
+}
+
+class _LiveIndicator extends ConsumerWidget {
+  const _LiveIndicator();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final connected =
+        ref.watch(realtimeConnectionProvider).asData?.value ?? false;
+    final color = connected ? const Color(0xFF16794B) : A2CColors.inkTertiary;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+      decoration: BoxDecoration(
+        color: connected ? const Color(0xFFE7F4EC) : A2CColors.surface,
+        borderRadius: BorderRadius.circular(30),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 7,
+            height: 7,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            connected ? 'En vivo' : 'Conectando',
+            style: A2CText.caption.copyWith(color: color, fontSize: 11),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -305,11 +395,9 @@ class _OpenObservations extends ConsumerWidget {
         const SizedBox(height: 9),
         ...observations.when(
           loading: () => [
-            const Padding(
-              padding: EdgeInsets.all(18),
-              child: Center(
-                child: CircularProgressIndicator(color: A2CColors.ink),
-              ),
+            const A2CLoadingSkeleton(
+              label: 'Cargando observaciones abiertas',
+              rows: 1,
             ),
           ],
           error: (error, _) => [
@@ -441,10 +529,15 @@ class _ObservationCard extends StatelessWidget {
 }
 
 class _SiteCard extends StatelessWidget {
-  const _SiteCard({required this.site, this.featured = false});
+  const _SiteCard({
+    required this.site,
+    this.featured = false,
+    this.recentlyUpdated = false,
+  });
 
   final Site site;
   final bool featured;
+  final bool recentlyUpdated;
 
   @override
   Widget build(BuildContext context) {
@@ -452,120 +545,132 @@ class _SiteCard extends StatelessWidget {
     final secondary = featured
         ? A2CColors.onInkSecondary
         : A2CColors.inkSecondary;
-    final background = featured ? A2CColors.ink : A2CColors.surface;
-    return Material(
-      color: background,
-      shape: RoundedRectangleBorder(
+    final background = featured
+        ? A2CColors.ink
+        : (recentlyUpdated
+              ? A2CColors.brandYellow.withValues(alpha: 0.20)
+              : A2CColors.surface);
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 420),
+      decoration: BoxDecoration(
+        color: background,
         borderRadius: BorderRadius.circular(A2CRadii.lg),
-        side: BorderSide(color: featured ? A2CColors.ink : A2CColors.border),
+        border: Border.all(
+          color: recentlyUpdated && !featured
+              ? A2CColors.brandYellow
+              : (featured ? A2CColors.ink : A2CColors.border),
+        ),
       ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => context.push('/sites/${site.id}'),
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    featured
-                        ? Icons.warehouse_outlined
-                        : Icons.apartment_rounded,
-                    color: featured ? A2CColors.brandYellow : A2CColors.ink,
-                    size: 21,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      site.name,
-                      style: A2CText.title.copyWith(color: color),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  if (site.isClosed)
-                    _SiteStatusBadge(label: 'Cerrada', dark: featured),
-                  if (!site.isClosed && !featured)
-                    const _SiteStatusBadge(label: 'Activa'),
-                  if (featured)
-                    const Icon(
-                      Icons.north_east_rounded,
-                      color: A2CColors.brandYellow,
-                    ),
-                ],
-              ),
-              if (!site.isWarehouse && site.ownerName != null) ...[
-                const SizedBox(height: 6),
-                Text(
-                  'Responsable · ${site.ownerName}',
-                  style: A2CText.caption.copyWith(color: secondary),
-                ),
-              ],
-              if (site.address != null && site.address!.isNotEmpty) ...[
-                const SizedBox(height: 5),
-                Text(
-                  site.address!,
-                  style: A2CText.caption.copyWith(color: secondary),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Text(
-                    '${site.summary.units}',
-                    style: A2CText.metric.copyWith(
-                      color: featured ? A2CColors.brandYellow : A2CColors.ink,
-                      fontSize: 30,
-                    ),
-                  ),
-                  const SizedBox(width: 7),
-                  Text(
-                    'unidades',
-                    style: A2CText.label.copyWith(color: secondary),
-                  ),
-                  const SizedBox(width: 18),
-                  Text(
-                    '${site.summary.assetCount}',
-                    style: A2CText.bodyStrong.copyWith(color: color),
-                  ),
-                  const SizedBox(width: 5),
-                  Text(
-                    'tipos de activo',
-                    style: A2CText.caption.copyWith(color: secondary),
-                  ),
-                ],
-              ),
-              if (site.summary.topItems.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(A2CRadii.lg),
+          onTap: () => context.push('/sites/${site.id}'),
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    for (final item in site.summary.topItems.take(3))
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: featured
-                              ? const Color(0x29FFFFFF)
-                              : const Color(0x0F000000),
-                          borderRadius: BorderRadius.circular(A2CRadii.pill),
-                        ),
-                        child: Text(
-                          '${item.name} ×${item.quantity}',
-                          style: A2CText.caption.copyWith(color: color),
-                        ),
+                    Icon(
+                      featured
+                          ? Icons.warehouse_outlined
+                          : Icons.apartment_rounded,
+                      color: featured ? A2CColors.brandYellow : A2CColors.ink,
+                      size: 21,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        site.name,
+                        style: A2CText.title.copyWith(color: color),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (site.isClosed)
+                      _SiteStatusBadge(label: 'Cerrada', dark: featured),
+                    if (!site.isClosed && !featured)
+                      const _SiteStatusBadge(label: 'Activa'),
+                    if (featured)
+                      const Icon(
+                        Icons.north_east_rounded,
+                        color: A2CColors.brandYellow,
                       ),
                   ],
                 ),
+                if (!site.isWarehouse && site.ownerName != null) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    'Responsable · ${site.ownerName}',
+                    style: A2CText.caption.copyWith(color: secondary),
+                  ),
+                ],
+                if (site.address != null && site.address!.isNotEmpty) ...[
+                  const SizedBox(height: 5),
+                  Text(
+                    site.address!,
+                    style: A2CText.caption.copyWith(color: secondary),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Text(
+                      '${site.summary.units}',
+                      style: A2CText.metric.copyWith(
+                        color: featured ? A2CColors.brandYellow : A2CColors.ink,
+                        fontSize: 30,
+                      ),
+                    ),
+                    const SizedBox(width: 7),
+                    Text(
+                      'unidades',
+                      style: A2CText.label.copyWith(color: secondary),
+                    ),
+                    const SizedBox(width: 18),
+                    Text(
+                      '${site.summary.assetCount}',
+                      style: A2CText.bodyStrong.copyWith(color: color),
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      'tipos de activo',
+                      style: A2CText.caption.copyWith(color: secondary),
+                    ),
+                  ],
+                ),
+                if (site.summary.topItems.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      for (final item in site.summary.topItems.take(3))
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: featured
+                                ? const Color(0x29FFFFFF)
+                                : const Color(0x0F000000),
+                            borderRadius: BorderRadius.circular(A2CRadii.pill),
+                          ),
+                          child: Text(
+                            '${item.name} ×${item.quantity}',
+                            style: A2CText.caption.copyWith(color: color),
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),

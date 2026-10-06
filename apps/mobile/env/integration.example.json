@@ -1,0 +1,9 @@
+{
+  "ENV": "integration",
+  "API_BASE_URL": "http://localhost:3100/api/v1",
+  "WS_URL": "http://localhost:3100/realtime",
+  "SENTRY_DSN": "",
+  "INTEGRATION_TEST_DNI": "REPLACE_WITH_TEST_ADMIN_DNI",
+  "INTEGRATION_TEST_PASSWORD": "REPLACE_WITH_TEST_ADMIN_PASSWORD",
+  "INTEGRATION_TEST_ALLOW_MUTATIONS": "true"
+}

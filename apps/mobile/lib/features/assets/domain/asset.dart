@@ -78,3 +78,35 @@ class AssetNote {
     createdAt: DateTime.parse(json['createdAt'] as String),
   );
 }
+
+class AssetPage {
+  const AssetPage({required this.assets, this.nextCursor});
+
+  final List<Asset> assets;
+  final String? nextCursor;
+
+  factory AssetPage.fromJson(Map<String, dynamic> json) => AssetPage(
+    assets: (json['data'] as List<dynamic>)
+        .map((item) => Asset.fromJson(item as Map<String, dynamic>))
+        .toList(growable: false),
+    nextCursor: json['nextCursor'] as String?,
+  );
+}
+
+class AssetSearchQuery {
+  const AssetSearchQuery({this.q = '', this.type, this.status});
+
+  final String q;
+  final String? type;
+  final String? status;
+
+  @override
+  bool operator ==(Object other) =>
+      other is AssetSearchQuery &&
+      other.q == q &&
+      other.type == type &&
+      other.status == status;
+
+  @override
+  int get hashCode => Object.hash(q, type, status);
+}
