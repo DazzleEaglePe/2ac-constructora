@@ -8,9 +8,11 @@ import {
 } from '@nestjs/terminus';
 import type Redis from 'ioredis';
 import { PrismaService } from '../../prisma/prisma.service';
+import { Public } from '../auth/decorators/auth.decorators';
 import { REDIS } from '../../redis/redis.module';
 
 @ApiTags('health')
+@Public()
 @Controller('health')
 export class HealthController {
   constructor(

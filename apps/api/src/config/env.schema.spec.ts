@@ -4,6 +4,8 @@ describe('validateEnv', () => {
   const base = {
     DATABASE_URL: 'postgresql://a2c:a2c@localhost:5433/a2c',
     REDIS_URL: 'redis://localhost:6380',
+    JWT_PRIVATE_KEY: 'clave-de-prueba\\nlinea-2',
+    JWT_PUBLIC_KEY: 'publica-de-prueba\\nlinea-2',
   };
 
   it('aplica valores por defecto', () => {
@@ -19,7 +21,16 @@ describe('validateEnv', () => {
     ]);
   });
 
+  it('convierte los \\n escapados de las claves en saltos de línea reales', () => {
+    expect(validateEnv(base).JWT_PRIVATE_KEY).toContain('\n');
+  });
+
+  it('exige las claves JWT', () => {
+    const { JWT_PRIVATE_KEY: _k, ...rest } = base;
+    expect(() => validateEnv(rest)).toThrow(/JWT_PRIVATE_KEY/);
+  });
+
   it('rechaza una configuración sin base de datos', () => {
-    expect(() => validateEnv({ REDIS_URL: base.REDIS_URL })).toThrow(/DATABASE_URL/);
+    expect(() => validateEnv({ ...base, DATABASE_URL: undefined })).toThrow(/DATABASE_URL/);
   });
 });

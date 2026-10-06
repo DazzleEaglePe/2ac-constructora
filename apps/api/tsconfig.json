@@ -14,7 +14,6 @@
     "sourceMap": true,
     "outDir": "dist",
     "baseUrl": ".",
-    "incremental": true,
     "types": ["node", "vitest/globals"]
   },
   "include": ["src/**/*.ts", "test/**/*.ts", "scripts/**/*.ts", "prisma/**/*.ts", "vitest.config.ts"],

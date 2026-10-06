@@ -1,3 +1,5 @@
 # Falsos positivos revisados (gitleaks).
 # Contraseña de ejemplo en .env.example del commit inicial; no es una credencial real.
 a82da35800de8521277613ee423eab75cf57ef4b:apps/api/.env.example:generic-api-key:10
+# Encabezado PEM falso en un fixture de prueba (env.schema.spec.ts); no es una clave real.
+7dc8ecfafb252c14a15405191720df8a216b97f8:apps/api/src/config/env.schema.spec.ts:private-key:7

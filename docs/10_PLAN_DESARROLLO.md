@@ -24,8 +24,8 @@
 
 | Sprint | Estado        | Avance | Notas |
 | ------ | ------------- | ------ | ----- |
-| S0     | ✅ Completado* | 95 %   | *Quedan como tareas del usuario: aceptar licencias Android y probar en un celular físico; proteger `main` |
-| S1     | ⏳ En curso    | 0 %    | Rama `feat/s1-auth-usuarios` |
+| S0     | ✅ Completado* | 95 %   | *Quedan como tareas del usuario: probar en un celular físico y proteger `main`* |
+| S1     | ⏳ En revisión | 95 %   | API (28 pruebas) + app (25 pruebas); flujo completo verificado en simulador iOS, web y emulador Android 15. PR #1. Pendiente: validación en Android físico y medición de 60 fps en equipo de gama media |
 | S2     | ⬜ Pendiente   | 0 %    |       |
 | S3     | ⬜ Pendiente   | 0 %    |       |
 | S4     | ⬜ Pendiente   | 0 %    |       |
@@ -81,7 +81,7 @@ Leyenda: ⬜ pendiente · ⏳ en curso · ✅ completado · ⚠️ bloqueado
 
 **Criterios de aceptación**
 - [x] `docker compose up` + `pnpm dev:api` responde `200` en `/health/ready`
-- [ ] La app abre en un Android y un iOS físicos con el tema A2C y la fuente Geist — *verificado en **simulador iOS (iPhone 18 Pro)** y **web**, conectada a la API; falta Android (aceptar licencias del SDK) y dispositivos físicos*
+- [ ] La app abre en un Android y un iOS físicos con el tema A2C y la fuente Geist — *verificado en **simulador iOS (iPhone 18 Pro)**, **web** y **emulador Android 15**, conectado a la API; falta validar dispositivos físicos*
 - [x] CI verde en GitHub Actions (API, Mobile y Seguridad)
 
 ---
@@ -91,36 +91,36 @@ Leyenda: ⬜ pendiente · ⏳ en curso · ✅ completado · ⚠️ bloqueado
 **Requerimientos:** RF-BIE-01…05, RF-AUT-01…06, RF-USR-01…05, RF-USR-07
 
 **Arrastrado de S0**
-- [ ] Cliente API Dart generado desde `openapi.yaml` en `packages/api_client`
+- [x] ~~Cliente API generado~~ → **reemplazado por repositorios Dio escritos a mano** con manejo de `problem+json` (ADR-11)
 
 **API**
-- [ ] `POST /auth/login` con Argon2id, bloqueo por intentos y tiempo constante
-- [ ] JWT RS256 (15 min) + refresh rotativo con detección de reutilización
-- [ ] `POST /auth/refresh`, `/auth/logout`, `/auth/change-password`, `GET /auth/me`
-- [ ] `JwtAuthGuard`, `RolesGuard`, decorador `@Roles` (roles `ADMIN` y `OPERADOR`)
-- [ ] Módulo `users`: listar, crear (DNI peruano de 8 dígitos), editar, desactivar/activar, restablecer contraseña
-- [ ] Rate limiting de login con Redis
-- [ ] Pruebas e2e de auth y usuarios (casos de bloqueo, desactivado, temporal)
+- [x] `POST /auth/login` con Argon2id, bloqueo por intentos y tiempo constante
+- [x] JWT RS256 (15 min) + refresh rotativo con detección de reutilización
+- [x] `POST /auth/refresh`, `/auth/logout`, `/auth/change-password`, `GET /auth/me`
+- [x] `JwtAuthGuard`, `RolesGuard`, decorador `@Roles` (roles `ADMIN` y `OPERADOR`)
+- [x] Módulo `users`: listar, crear (DNI peruano de 8 dígitos), editar, desactivar/activar, restablecer contraseña
+- [x] Rate limiting de login (20/min por IP, en memoria) — *almacenamiento en Redis para varias instancias: S5*
+- [x] Pruebas e2e de auth y usuarios (casos de bloqueo, desactivado, temporal)
 
 **App**
-- [ ] **Splash animado** `A2CSplashAnimation` (CustomPainter, 6,5 s, cortes de fondo, viga, franja, revelado de CONSTRUCTORA) según `09` §8
-- [ ] Soporte de "reducir movimiento" en el splash
-- [ ] **Onboarding de 3 pasos** con tarjetas flotantes, puntos tocables, "Saltar" y CTA amarillo
-- [ ] Persistir "onboarding visto"
-- [ ] **Ingreso** (hero con edificios, franja, ícono A2C, hoja con DNI y contraseña, beneficios)
-- [ ] Cambio de contraseña temporal (diseñar pantalla)
-- [ ] Gestión de sesión: secure storage, interceptor de refresh, cierre de sesión
-- [ ] Guardas de `go_router` (sin sesión → login; temporal → cambio de contraseña)
-- [ ] Pantalla **Usuarios** (lista, alta en línea, edición, desactivar, restablecer) solo para admin
-- [ ] Panel con barra de navegación (3 destinos admin / 2 operador) y estado vacío
-- [ ] Utilidad `can(Permission)` para ocultar acciones de admin al operador
+- [x] **Splash animado** `A2CSplashAnimation` (CustomPainter, 6,5 s, cortes de fondo, viga, franja, revelado de CONSTRUCTORA) según `09` §8
+- [x] Soporte de "reducir movimiento" en el splash
+- [x] **Onboarding de 3 pasos** con tarjetas flotantes, puntos tocables, "Saltar" y CTA amarillo
+- [x] Persistir "onboarding visto"
+- [x] **Ingreso** (hero con edificios, franja, ícono A2C, hoja con DNI y contraseña, beneficios)
+- [x] Cambio de contraseña temporal (diseñar pantalla)
+- [x] Gestión de sesión: secure storage, interceptor de refresh, cierre de sesión
+- [x] Guardas de `go_router` (sin sesión → login; temporal → cambio de contraseña)
+- [x] Pantalla **Usuarios** (lista, alta en línea, edición, desactivar, restablecer) solo para admin
+- [x] Panel con barra de navegación (3 destinos admin / 2 operador) y estado vacío
+- [x] Ocultar acciones de admin al operador (barra con 2 destinos y guarda de `/users`; `can(Permission)` se generaliza en S3)
 
 **Criterios de aceptación**
-- [ ] Primer uso: splash → onboarding → ingreso → cambio de contraseña → panel
-- [ ] Usos siguientes: splash breve → panel sin pedir credenciales
-- [ ] 5 intentos fallidos bloquean la cuenta 15 min con mensaje claro
-- [ ] Un usuario desactivado pierde la sesión en ≤ 15 min (o al instante con WS en S5)
-- [ ] El splash corre a 60 fps en un Android de gama media
+- [x] Primer uso: splash → onboarding → ingreso → cambio de contraseña → panel
+- [x] Usos siguientes: splash breve → panel sin pedir credenciales
+- [x] 5 intentos fallidos bloquean la cuenta 15 min con mensaje claro
+- [x] Un usuario desactivado pierde la sesión en ≤ 15 min (o al instante con WS en S5)
+- [ ] El splash corre a 60 fps en un Android de gama media — *verificado el flujo en simulador iOS, web y emulador Android 15; falta medir rendimiento en un Android físico de gama media*
 
 ---
 
