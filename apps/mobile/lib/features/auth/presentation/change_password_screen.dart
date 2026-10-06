@@ -121,25 +121,31 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
             ),
             const SizedBox(height: 10),
             for (final (label, ok) in checks)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Row(
-                  children: [
-                    Icon(
-                      ok
-                          ? Icons.check_circle_rounded
-                          : Icons.radio_button_unchecked,
-                      size: 18,
-                      color: ok ? A2CColors.ink : A2CColors.inkTertiary,
+              Semantics(
+                container: true,
+                label: '$label. ${ok ? 'Cumplido' : 'Pendiente'}',
+                child: ExcludeSemantics(
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Row(
+                      children: [
+                        Icon(
+                          ok
+                              ? Icons.check_circle_rounded
+                              : Icons.radio_button_unchecked,
+                          size: 18,
+                          color: ok ? A2CColors.ink : A2CColors.inkTertiary,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          label,
+                          style: A2CText.label.copyWith(
+                            color: ok ? A2CColors.ink : A2CColors.inkSecondary,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      label,
-                      style: A2CText.label.copyWith(
-                        color: ok ? A2CColors.ink : A2CColors.inkSecondary,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             const SizedBox(height: 14),
@@ -149,11 +155,18 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
               autofill: AutofillHints.newPassword,
             ),
             if (_confirm.text.isNotEmpty && !matches)
-              Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Text(
-                  'Las contraseñas no coinciden',
-                  style: A2CText.label.copyWith(color: A2CColors.error),
+              Semantics(
+                container: true,
+                liveRegion: true,
+                label: 'Las contraseñas no coinciden',
+                child: ExcludeSemantics(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Text(
+                      'Las contraseñas no coinciden',
+                      style: A2CText.label.copyWith(color: A2CColors.error),
+                    ),
+                  ),
                 ),
               ),
             const SizedBox(height: 24),
@@ -161,6 +174,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
               label: 'Guardar y continuar',
               onPressed: valid ? () => _submit(valid) : null,
               loading: _loading,
+              loadingLabel: 'Actualizando contraseña',
             ),
           ],
         ),
@@ -183,17 +197,11 @@ class _PasswordField extends StatelessWidget {
   final VoidCallback? onChanged;
 
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(label, style: A2CText.label),
-      const SizedBox(height: A2CSpace.sm),
-      TextField(
-        controller: controller,
-        obscureText: true,
-        autofillHints: [autofill],
-        onChanged: (_) => onChanged?.call(),
-      ),
-    ],
+  Widget build(BuildContext context) => TextField(
+    controller: controller,
+    obscureText: true,
+    autofillHints: [autofill],
+    onChanged: (_) => onChanged?.call(),
+    decoration: InputDecoration(labelText: label),
   );
 }

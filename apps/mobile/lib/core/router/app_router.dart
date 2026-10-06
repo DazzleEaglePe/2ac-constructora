@@ -5,10 +5,17 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/application/session_controller.dart';
 import '../../features/auth/presentation/change_password_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
+import '../../features/audit/presentation/audit_logs_screen.dart';
 import '../../features/dev/component_catalog_screen.dart';
+import '../../features/assets/presentation/new_asset_screen.dart';
+import '../../features/assets/presentation/asset_detail_screen.dart';
+import '../../features/movements/presentation/create_movement_screen.dart';
 import '../../features/shell/dashboard_screen.dart';
 import '../../features/shell/home_shell.dart';
 import '../../features/shell/inventory_screen.dart';
+import '../../features/sites/domain/site.dart';
+import '../../features/sites/presentation/new_site_screen.dart';
+import '../../features/sites/presentation/site_detail_screen.dart';
 import '../../features/users/presentation/users_screen.dart';
 import '../../features/welcome/onboarding_screen.dart';
 import '../../features/welcome/splash_screen.dart';
@@ -46,7 +53,33 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         branches: [
           StatefulShellBranch(
             routes: [
-              GoRoute(path: '/', builder: (_, _) => const DashboardScreen()),
+              GoRoute(
+                path: '/',
+                builder: (_, _) => const DashboardScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'audit',
+                    builder: (_, _) => const AuditLogsScreen(),
+                  ),
+                  GoRoute(
+                    path: 'sites/new',
+                    builder: (_, _) => const NewSiteScreen(),
+                  ),
+                  GoRoute(
+                    path: 'sites/:siteId',
+                    builder: (_, state) => SiteDetailScreen(
+                      siteId: state.pathParameters['siteId']!,
+                    ),
+                    routes: [
+                      GoRoute(
+                        path: 'edit',
+                        builder: (_, state) =>
+                            NewSiteScreen(initialSite: state.extra as Site?),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ],
           ),
           StatefulShellBranch(
@@ -54,6 +87,31 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/inventory',
                 builder: (_, _) => const InventoryScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'assets/new',
+                    builder: (_, _) => const NewAssetScreen(),
+                  ),
+                  GoRoute(
+                    path: 'assets/:assetId',
+                    builder: (_, state) => AssetDetailScreen(
+                      assetId: state.pathParameters['assetId']!,
+                    ),
+                    routes: [
+                      GoRoute(
+                        path: 'move',
+                        builder: (_, state) {
+                          final extra = state.extra as Map<String, String>?;
+                          return CreateMovementScreen(
+                            assetId: state.pathParameters['assetId']!,
+                            initialFromSiteId: extra?['initialFromSiteId'],
+                            initialToSiteId: extra?['initialToSiteId'],
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ],
           ),

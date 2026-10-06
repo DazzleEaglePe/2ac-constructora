@@ -24,13 +24,13 @@
 
 | Sprint | Estado        | Avance | Notas |
 | ------ | ------------- | ------ | ----- |
-| S0     | ✅ Completado* | 95 %   | *Quedan como tareas del usuario: probar en un celular físico y proteger `main`* |
-| S1     | ⏳ En revisión | 95 %   | API (28 pruebas) + app (25 pruebas); flujo completo verificado en simulador iOS, web y emulador Android 15. PR #1. Pendiente: validación en Android físico y medición de 60 fps en equipo de gama media |
-| S2     | ⬜ Pendiente   | 0 %    |       |
-| S3     | ⬜ Pendiente   | 0 %    |       |
-| S4     | ⬜ Pendiente   | 0 %    |       |
-| S5     | ⬜ Pendiente   | 0 %    |       |
-| S6     | ⬜ Pendiente   | 0 %    |       |
+| S0     | ✅ Completado* | 98 %   | *`main` ya exige PR, checks `api`/`flutter`/`gitleaks`/`dependencias`, resolución de conversaciones y bloquea force-push/eliminación; falta validar en teléfonos físicos* |
+| S1     | ⏳ En revisión | 95 %   | PR #1 fusionado en `main` tras CI verde; 20 pruebas e2e de auth/usuarios y 26 pruebas móviles; flujo verificado en simulador iOS, web y emulador Android 15. Pendiente: Android físico y medición de 60 fps en gama media. |
+| S2     | 🟡 En progreso | 90 %   | Mapa con pin, coordenadas y geocodificación opcional listos; queda la validación en dispositivo al cierre. |
+| S3     | 🟡 En progreso | 90 %   | Catálogo con búsqueda remota sin acentos, filtros, cursor y distribución; alta concurrente ya cubierta. Falta validar en dispositivos. |
+| S4     | 🟡 En progreso | 90 %   | Traslados y reglas consistentes; verificación nocturna de stock y obras cerradas implementada. Falta validar en dispositivo. |
+| S5     | 🟡 En progreso | 85 %   | Panel, auditoría, búsqueda rápida, accesos, destellos y tiempo real API↔app listos; falta validación en dos dispositivos. |
+| S6     | 🟡 En progreso | 75 %   | Caché Drift persistente, cola idempotente, sincronización al volver la red, reversión visual al rechazo, aviso con antigüedad de caché, Sentry e importación CSV/XLSX listas; el XLSX de 500 filas completó en 2,9 s en la base local. Recorrido de ingreso, obra, activo y movimiento pasó en iPhone 18 Pro Simulator (iOS 27) y A2C Pixel 7 AVD (Android 15 / API 35), contra `a2c_test`. Estados vacíos y errores revisados; guion de carga preparado. Faltan lectores de pantalla y modo avión en dispositivos, carga en staging, revisión formal de seguridad y beta cerrada. |
 | S7     | ⬜ Pendiente   | 0 %    |       |
 
 Leyenda: ⬜ pendiente · ⏳ en curso · ✅ completado · ⚠️ bloqueado
@@ -40,7 +40,7 @@ Leyenda: ⬜ pendiente · ⏳ en curso · ✅ completado · ⚠️ bloqueado
 | Pregunta (`01` §9)                        | Necesaria antes de |
 | ----------------------------------------- | ------------------ |
 | ~~P2 Roles · P3 DNI · P6 permisos por obra~~ | ✅ Resueltas el 2026-10-04: ADMIN + OPERADOR, DNI Perú 8 dígitos, sin permisos por obra |
-| P5 Plataformas y celulares                | S6                 |
+| P5 Modelos/propiedad de celulares físicos (Android + iOS confirmado) | S6 |
 | P1 Nombre definitivo · P8 Hosting         | S7                 |
 
 ---
@@ -52,7 +52,7 @@ Leyenda: ⬜ pendiente · ⏳ en curso · ✅ completado · ⚠️ bloqueado
 **Objetivo:** dejar listo el esqueleto de API y app para que desde S1 solo se construyan funcionalidades.
 
 **Repositorio y herramientas**
-- [x] Repositorio en GitHub: [`DazzleEaglePe/2ac-constructora`](https://github.com/DazzleEaglePe/2ac-constructora) — *pendiente: protección de la rama `main`*
+- [x] Repositorio en GitHub: [`DazzleEaglePe/2ac-constructora`](https://github.com/DazzleEaglePe/2ac-constructora) — `main` protegida: PR requerido, checks `api`/`flutter`/`gitleaks`/`dependencias`, conversaciones resueltas, sin force-push ni eliminación
 - [x] Estructura de monorepo según `11_ESTRUCTURA_PROYECTO.md`
 - [x] `.editorconfig`, `.gitignore`, commitlint (Conventional Commits), plantillas de PR
 - [x] Docker Compose local: PostgreSQL 16 + Redis 7 (puertos 5433 y 6380 para no chocar con otros proyectos)
@@ -72,7 +72,7 @@ Leyenda: ⬜ pendiente · ⏳ en curso · ✅ completado · ⚠️ bloqueado
 - [x] Biblioteca de widgets base: botones, campo de texto, chip, badge de estado, tarjetas, barra de navegación, FAB y logo `A2CLogo`
 - [x] Pantalla "catálogo de componentes" (solo `ENV=dev`) con estado de conexión a la API
 - [x] Entornos `dev` / `staging` / `prod` con `--dart-define-from-file=env/<entorno>.json` *(flavors nativos de Android/iOS se agregan en S6, al configurar la firma)*
-- [ ] Cliente API generado desde OpenAPI en `packages/api_client` → **movido a S1**: se genera cuando existan los endpoints de auth (hoy solo hay `/health`)
+- [x] ~~Cliente API generado desde OpenAPI en `packages/api_client`~~ → **reemplazado en S1** por repositorios Dio escritos a mano (ADR-11)
 
 **CI**
 - [x] GitHub Actions: lint + typecheck + test (con Postgres y Redis de servicio) + build de API
@@ -99,7 +99,7 @@ Leyenda: ⬜ pendiente · ⏳ en curso · ✅ completado · ⚠️ bloqueado
 - [x] `POST /auth/refresh`, `/auth/logout`, `/auth/change-password`, `GET /auth/me`
 - [x] `JwtAuthGuard`, `RolesGuard`, decorador `@Roles` (roles `ADMIN` y `OPERADOR`)
 - [x] Módulo `users`: listar, crear (DNI peruano de 8 dígitos), editar, desactivar/activar, restablecer contraseña
-- [x] Rate limiting de login (20/min por IP, en memoria) — *almacenamiento en Redis para varias instancias: S5*
+- [x] Rate limiting compartido en Redis: 20/min por IP en login y 300/min para el resto de la API
 - [x] Pruebas e2e de auth y usuarios (casos de bloqueo, desactivado, temporal)
 
 **App**
@@ -129,20 +129,20 @@ Leyenda: ⬜ pendiente · ⏳ en curso · ✅ completado · ⚠️ bloqueado
 **Requerimientos:** RF-UBI-01…07, RF-BUS-03
 
 **API**
-- [ ] Módulo `sites`: CRUD, cerrar/reabrir (valida stock 0), `GET /sites/{id}/stock`
-- [ ] Resumen por ubicación (`units`, `assetCount`, `topItems`, `lastMovementAt`)
-- [ ] Auditoría de altas y cierres de obra
+- [x] Módulo `sites`: CRUD, cerrar/reabrir (valida stock 0), `GET /sites/{id}/stock`
+- [x] Resumen por ubicación (`units`, `assetCount`, `topItems`, `lastMovementAt`)
+- [x] Auditoría de altas, ediciones y cierres/reaperturas de obra
 
 **App**
-- [ ] **Nueva obra**: nombre, dueño, búsqueda de dirección, mapa con pin ajustable
-- [ ] **Detalle de obra**: título en 2 líneas, bento (unidades en tarjeta negra, activos, dueño), mapa con "Abrir en Maps", filtros por tipo, lista de activos
-- [ ] Almacén central con el mismo detalle
-- [ ] Lista de obras en el panel (tarjetas `SiteCard`, sin tiempo real aún)
+- [x] **Nueva obra**: nombre, responsable, ubicación por coordenadas, mapa con pin ajustable, geocodificación inversa opcional y acceso a Maps
+- [x] **Detalle de obra**: datos, stock, responsable, dirección/coordenadas, filtros por tipo y acceso a Maps
+- [x] Almacén central visible en el panel y con detalle/stock
+- [x] Lista de obras en el panel (tarjetas `SiteCard`, sin tiempo real aún)
 
 **Criterios de aceptación**
-- [ ] Crear una obra con ubicación y verla en el panel y en su detalle
-- [ ] "Abrir en Maps" abre la app de mapas del dispositivo en el punto correcto
-- [ ] No se puede cerrar una obra con activos
+- [x] Crear/editar una obra con coordenadas y verla en el panel y en su detalle
+- [x] "Abrir en Maps" abre Maps con dirección o coordenadas
+- [x] No se puede cerrar una obra con activos
 
 ---
 
@@ -151,26 +151,26 @@ Leyenda: ⬜ pendiente · ⏳ en curso · ✅ completado · ⚠️ bloqueado
 **Requerimientos:** RF-ACT-01…08, RF-BUS-01, RF-BUS-02, RF-BUS-04, RF-BUS-05
 
 **API**
-- [ ] Módulo `assets`: alta transaccional (código por secuencia + stock inicial + movimiento `ALTA`)
-- [ ] `GET /assets/next-code`, edición, cambio de estado con motivo, notas
-- [ ] Búsqueda por nombre/código (trigram + unaccent) y filtros
-- [ ] `distribution[]` en los resultados de búsqueda (consulta de disponibilidad, RF-BUS-05)
-- [ ] Regla RN-01 (máquina = 1) en servicio y en BD
-- [ ] Pruebas unitarias de reglas y concurrencia de códigos
+- [x] Módulo `assets`: alta transaccional (código por secuencia + stock inicial + movimiento `ALTA`)
+- [x] `GET /assets/next-code`, edición, cambio de estado con motivo y notas
+- [x] Búsqueda por nombre/código insensible a acentos, filtros, paginación por cursor e índices trigram
+- [x] `distribution[]` en los resultados de búsqueda (consulta de disponibilidad, RF-BUS-05)
+- [x] Regla RN-01 (máquina = 1) en servicio y en BD
+- [x] Prueba e2e de altas simultáneas con códigos únicos
 
 **App**
-- [ ] **Nueva herramienta o equipo**: tipo (máquina/herramienta), código automático, nombre, descripción, estado, stock (bloqueado en 1 para máquina), ubicación inicial
-- [ ] **Inventario general**: buscador, filtros por tipo y estado, filas `AssetRow`, FAB (solo admin), estado vacío
-- [ ] **Consulta de disponibilidad**: resultados de búsqueda con distribución por obra y almacén ("Almacén central 6 · Obra Juan Ramírez 2")
-- [ ] **Detalle de activo**: código, tipo, estado, distribución por ubicación (barra + leyenda), notas desplegables
-- [ ] Hoja inferior para editar y cambiar estado
+- [x] **Nueva herramienta o equipo**: tipo, código automático, nombre, descripción, stock inicial (máquina limitada a 1) y ubicación inicial
+- [x] **Inventario general**: buscador, filtros por tipo y estado, distribución resumida, botón de alta solo admin y estado vacío
+- [x] **Consulta de disponibilidad**: resultados de búsqueda con distribución resumida por obra y almacén
+- [x] **Detalle de activo**: código, tipo, estado, distribución proporcional por ubicación y notas
+- [x] Edición de nombre y descripción, y cambio de estado con motivo obligatorio para dar de baja
 
 **Criterios de aceptación**
-- [ ] Dos altas simultáneas nunca generan el mismo código
-- [ ] Una máquina no puede tener stock distinto de 1
-- [ ] Buscar "amol" encuentra "Amoladora angular 4½\""
-- [ ] Buscar "pala" muestra en qué obras y en el almacén hay palas, y cuántas, sin entrar al detalle
-- [ ] Un operador no ve ni puede usar el alta de activos (la API responde `403`)
+- [x] Dos altas simultáneas nunca generan el mismo código
+- [x] Una máquina no puede tener stock distinto de 1
+- [x] Buscar sin distinguir acentos y filtrar/paginar resultados sin duplicados
+- [x] Buscar "pala" muestra stock por obra y almacén en los resultados, sin entrar al detalle
+- [x] Un operador no ve ni puede usar el alta de activos (la API responde `403`)
 
 ---
 
@@ -179,30 +179,32 @@ Leyenda: ⬜ pendiente · ⏳ en curso · ✅ completado · ⚠️ bloqueado
 **Requerimientos:** RF-MOV-01…14, RF-UBI-03 (lista con movimientos)
 
 **API**
-- [ ] `POST /movements` con transacción, `SELECT … FOR UPDATE`, validaciones RN-01…RN-10
-- [ ] `Idempotency-Key` obligatorio y respuesta repetible
-- [ ] Permisos: `ADMIN` y `OPERADOR` mueven entre cualquier obra y el almacén; solo `ADMIN` revierte
-- [ ] Historiales: por activo, por obra, general con filtros
-- [ ] `POST /movements/{id}/revert`
-- [ ] Observaciones (RN-15): creación junto al movimiento, `GET /observations`, `POST /observations/{id}/resolve`
-- [ ] Prueba de concurrencia: 50 movimientos simultáneos sobre el mismo stock → nunca negativo
-- [ ] Job nocturno de verificación de invariantes
+- [x] `POST /movements` transaccional con bloqueo por activo y validaciones RN-01…RN-10
+- [x] `Idempotency-Key` obligatorio y respuesta repetible
+- [x] Permisos: `ADMIN` y `OPERADOR` mueven entre cualquier obra y almacén
+- [x] Historial por activo y general con filtros
+- [x] Historial filtrable por ubicación; la app muestra actividad reciente en la ficha de obra
+- [x] `POST /movements/{id}/revert` solo ADMIN, creando el inverso sin modificar el historial original
+- [x] Observaciones: creación junto al movimiento, `GET /observations` y resolución por ADMIN
+- [x] Prueba concurrente: dos traslados sobre el mismo stock → uno confirma y el otro recibe stock insuficiente
+- [x] Job nocturno (02:00, hora de Lima) que detecta stock total descuadrado y stock en obras cerradas
 
 **App**
-- [ ] **Mover o asignar**: tarjeta del activo, Desde (con disponibles), Hacia, cantidad (stepper o candado), nota, resumen, "Confirmar movimiento"
-- [ ] Atajo "Asignar activo a esta obra" con destino precargado
-- [ ] Advertencia de Mantenimiento
-- [ ] **Reportar observación** al mover (tipo + descripción) y chip en historial / detalle del activo
-- [ ] Pantalla **Movimiento registrado** (diseñar)
-- [ ] Historial en el detalle del activo y de la obra
-- [ ] Manejo de `STOCK_INSUFICIENTE` con recarga del selector
+- [x] **Mover o asignar**: activo, origen con disponibles, destino, cantidad, nota, resumen y confirmación
+- [x] Atajo para mover desde el detalle de una obra con origen precargado
+- [x] Advertencia no bloqueante si el activo está en Mantenimiento y va a una obra
+- [x] **Reportar observación** al mover (tipo + descripción), verla en el historial y marcar atendida como ADMIN
+- [x] Confirmación "Movimiento registrado" y actualización de inventario/obras
+- [x] Historial por activo y por obra
+- [x] Reversión desde el historial del activo, solo para ADMIN
+- [x] Manejo de `STOCK_INSUFICIENTE` con recarga de la disponibilidad
 
 **Criterios de aceptación**
-- [ ] Mover 1 unidad en ≤ 4 toques desde el detalle del activo
-- [ ] El stock total del activo no cambia tras un traslado
-- [ ] Un reintento con la misma clave no duplica el movimiento
-- [ ] La reversión deja el stock como antes y ambos movimientos quedan enlazados
-- [ ] Un traslado con observación se registra sin aprobación y la observación queda ABIERTA
+- [x] Mover 1 unidad en ≤ 4 toques desde el detalle del activo
+- [x] El stock total del activo no cambia tras un traslado
+- [x] Un reintento con la misma clave no duplica el movimiento
+- [x] La reversión deja el stock como antes y ambos movimientos quedan enlazados
+- [x] Un traslado con observación se registra sin aprobación y la observación queda ABIERTA
 
 ---
 
@@ -211,24 +213,26 @@ Leyenda: ⬜ pendiente · ⏳ en curso · ✅ completado · ⚠️ bloqueado
 **Requerimientos:** RF-PAN-01…07, RF-AUD-01, RF-AUD-02
 
 **API**
-- [ ] `GET /dashboard` con totales y resúmenes
-- [ ] Gateway Socket.IO con autenticación en el handshake y salas
-- [ ] Emisión de eventos tras `COMMIT` (`movement.created`, `stock.updated`, `site.updated`, `asset.updated`, `session.revoked`)
-- [ ] Adaptador Redis para varias instancias
-- [ ] `GET /audit-logs`
+- [x] `GET /dashboard` con totales, obras, almacén y marca `changedSince`
+- [x] Gateway Socket.IO con autenticación JWT del handshake, sesión vigente y salas
+- [x] Emisión tras `COMMIT` de `movement.created`, `stock.updated`, `site.updated`, `asset.updated` y `session.revoked`
+- [x] Adaptador Redis para varias instancias
+- [x] Almacenamiento Redis compartido para los límites de tasa de la API *(ventana deslizante atómica; validado con pruebas unitarias)*
+- [x] `GET /audit-logs` con filtros, cursor y acceso solo ADMIN
 
 **App**
-- [ ] **Panel**: avatar, indicador "En vivo", hero "Tu inventario, en tiempo real", buscador, accesos rápidos, tarjetas de métrica, obras, almacén (tarjeta negra)
-- [ ] Cliente WebSocket con reconexión exponencial y *resync*
-- [ ] Destello de tarjetas actualizadas
-- [ ] Deslizar para refrescar
-- [ ] Cierre de sesión forzado al recibir `session.revoked`
-- [ ] Sección **Observaciones abiertas** en el panel del administrador, con "Marcar como atendida"
+- [x] **Panel**: avatar, hero, indicador "En vivo", búsqueda rápida, accesos directos, métricas, obras, almacén y observaciones
+- [x] Cliente WebSocket con reconexión exponencial y *resync* al conectar o recuperar conexión
+- [x] Destello temporal de tarjetas de obra afectadas por un cambio en tiempo real
+- [x] Deslizar para refrescar el panel
+- [x] Cierre de sesión forzado al recibir `session.revoked`
+- [x] Sección **Observaciones abiertas** en el panel del administrador, con "Marcar como atendida"
+- [x] Pantalla ADMIN de auditoría con filtro por acción y paginación
 
 **Criterios de aceptación**
-- [ ] Un movimiento en el celular A aparece en el panel del celular B en ≤ 2 s
-- [ ] Tras perder y recuperar la red, el panel queda consistente sin recargar a mano
-- [ ] Las acciones administrativas aparecen en la auditoría
+- [ ] Un movimiento en el celular A aparece en el panel del celular B en ≤ 2 s (*validación en dispositivos al cierre*)
+- [ ] Tras perder y recuperar la red, el panel queda consistente sin recargar a mano (*validación en dispositivos al cierre*)
+- [x] Las acciones administrativas aparecen en la auditoría consultable por ADMIN
 
 ---
 
@@ -237,28 +241,28 @@ Leyenda: ⬜ pendiente · ⏳ en curso · ✅ completado · ⚠️ bloqueado
 **Requerimientos:** RF-OFF-01…04, RF-ACT-09
 
 **App**
-- [ ] Caché Drift de panel, obras, inventario e historial reciente
-- [ ] Cola de movimientos pendientes con estado (PENDIENTE / ENVIADO / RECHAZADO)
-- [ ] Actualización optimista y reversión al rechazo
-- [ ] Banda "Sin conexión" y chip "N pendientes"
-- [ ] Estados vacíos, de error y esqueletos en todas las pantallas
-- [ ] Accesibilidad: `Semantics`, texto al 130 %, TalkBack/VoiceOver
-- [ ] Integración de Sentry
+- [x] Caché Drift de panel, obras, inventario e historial reciente
+- [x] Cola de movimientos pendientes con estado (PENDIENTE / ENVIADO / RECHAZADO)
+- [x] Actualización optimista del detalle de activo y reversión al rechazo
+- [x] Banda "Sin conexión" y chip "N pendientes"
+- [x] Estados vacíos, de error y esqueletos en todas las pantallas *(revisión de todos los estados asíncronos; carga, error/reintento y vacío en panel, inventario, detalles, movimientos, altas, auditoría, usuarios y cola offline; el mapa permite reintentar. Los historiales vacíos tienen mensaje propio y los errores de paginación conservan los registros ya cargados)*
+- [ ] Accesibilidad: `Semantics`, texto al 130 %, TalkBack/VoiceOver *(campos etiquetados en ingreso, contraseñas, obras, activos, movimientos y alta de usuarios; cargas de ingreso/guardado/movimiento y coordenadas del mapa anunciadas; cola offline probada para vacío, rechazo y corrección inválida. Formularios de obra, estados vacíos y botones verificados al 130 %; falta el recorrido final con VoiceOver/TalkBack en iOS/Android)*
+- [x] Integración de Sentry, configurable por `SENTRY_DSN` y sin datos personales predeterminados
 
 **API**
-- [ ] `POST /assets/import` (CSV/XLSX) con validación por fila y reporte
-- [ ] Plantilla de importación descargable
+- [x] `POST /assets/import` CSV/XLSX con validación por fila, límite de 500 activos y reporte de resultados
+- [x] Plantilla CSV descargable con resolución por nombre de ubicación o UUID
 
 **Calidad**
-- [ ] Pruebas de integración Flutter de los flujos clave (ingreso, mover, alta)
-- [ ] Prueba de carga de la API (200 usuarios, 10 000 movimientos/día)
-- [ ] Revisión de seguridad (`07` §10)
+- [x] Pruebas de integración Flutter de los flujos clave (ingreso, mover, alta) *(ingreso, alta de obra, alta de activo y movimiento: `flutter test integration_test/app_flow_test.dart` pasó en iPhone 18 Pro Simulator (iOS 27) y A2C Pixel 7 AVD (Android 15 / API 35), API/base local aislada `a2c_test`; compilación iOS y Android confirmada)*
+- [ ] Prueba de carga de la API (200 usuarios, 10 000 movimientos/día) *(guion preparado en `tools/perf`; falta ejecutarlo en staging con datos aislados)*
+- [ ] Revisión de seguridad (`07` §10) *(`pnpm audit --prod` sin vulnerabilidades conocidas y Gitleaks sin hallazgos en los archivos del worktree; faltan pentest, MASVS L1, rotación/configuración de secretos de staging y producción, restauración real de respaldos, prueba de tasa en staging y aprobaciones operativas)*
 - [ ] Beta cerrada: TestFlight + Google Play prueba interna
 
 **Criterios de aceptación**
-- [ ] Un movimiento hecho en modo avión se envía solo al volver la red
-- [ ] Un movimiento pendiente rechazado muestra el motivo y permite corregir
-- [ ] Importar 500 activos desde Excel en < 1 min con reporte de errores
+- [ ] Un movimiento hecho en modo avión se envía solo al volver la red *(la prueba unitaria ya verifica que el worker reacciona a la reconexión; falta el recorrido en modo avión en Android/iOS)*
+- [x] Un movimiento pendiente rechazado muestra el motivo y permite corregir
+- [x] Importar 500 activos desde Excel en < 1 min con reporte de errores *(e2e local: 500 creados, 0 errores, 2,9 s; test opt-in `RUN_ASSET_IMPORT_PERF=1`)*
 
 ---
 

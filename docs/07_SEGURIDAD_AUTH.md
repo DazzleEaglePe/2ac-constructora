@@ -86,7 +86,7 @@ Dos roles, definidos por Constructora A2C (2026-10-04). Puede haber varios admin
 | Validación de entrada           | `ValidationPipe` con `whitelist` y `forbidNonWhitelisted`                |
 | Inyección SQL                   | Prisma con consultas parametrizadas; SQL crudo solo con `$queryRaw` etiquetado |
 | Encabezados                     | Helmet, HSTS, `X-Content-Type-Options`, CORS restringido al panel web    |
-| Rate limiting                   | `@nestjs/throttler` con almacenamiento Redis (ver `06` §10)              |
+| Rate limiting                   | `@nestjs/throttler` con ventana deslizante compartida en Redis: 300 solicitudes/min por IP en general y 20/min en login. La actualización del contador y el bloqueo son atómicos. |
 | Secretos                        | Variables de entorno desde el gestor del proveedor; nunca en el repo (gitleaks en CI) |
 | Dependencias                    | `pnpm audit` + Dependabot; `dart pub outdated` en CI                     |
 | Errores                         | Sin trazas internas en respuestas de producción                          |

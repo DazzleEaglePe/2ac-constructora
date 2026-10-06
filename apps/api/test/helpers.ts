@@ -7,9 +7,12 @@ import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { setupApp } from '../src/setup-app';
 
-export async function createTestApp(): Promise<INestApplication> {
+export async function createTestApp(
+  configure?: (app: INestApplication) => Promise<void> | void,
+): Promise<INestApplication> {
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
   const app = moduleRef.createNestApplication({ bufferLogs: true });
+  await configure?.(app);
   setupApp(app);
   await app.init();
   return app;

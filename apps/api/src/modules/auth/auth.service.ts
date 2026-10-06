@@ -2,6 +2,7 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import { DomainException } from '../../common/filters/problem-details.filter';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { toUserView, UserView } from '../users/user.view';
 import { PasswordService } from './password.service';
 import { hashToken, TokenPair, TokenService } from './token.service';
@@ -27,6 +28,7 @@ export class AuthService {
     private readonly passwords: PasswordService,
     private readonly tokens: TokenService,
     private readonly audit: AuditService,
+    private readonly realtime: RealtimeGateway,
   ) {}
 
   /** RF-AUT-01 / RF-AUT-04: ingreso por DNI con bloqueo tras 5 intentos fallidos. */
@@ -102,6 +104,7 @@ export class AuthService {
     if (stored.revokedAt) {
       // Reutilización de un token ya rotado: posible robo → se cierra toda la sesión.
       await this.tokens.revokeFamily(stored.familyId);
+      this.realtime.revokeSession(stored.userId, stored.familyId);
       throw invalid;
     }
     if (stored.expiresAt < new Date() || !stored.user.active) throw invalid;
@@ -121,7 +124,10 @@ export class AuthService {
     const stored = await this.prisma.refreshToken.findUnique({
       where: { tokenHash: hashToken(refreshToken) },
     });
-    if (stored) await this.tokens.revokeFamily(stored.familyId);
+    if (stored) {
+      await this.tokens.revokeFamily(stored.familyId);
+      this.realtime.revokeSession(stored.userId, stored.familyId);
+    }
   }
 
   /** RF-AUT-05 / RF-USR-07: cambio de contraseña propia (incluida la temporal). */

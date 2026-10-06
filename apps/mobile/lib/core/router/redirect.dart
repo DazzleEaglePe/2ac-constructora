@@ -26,6 +26,7 @@ String? appRedirect({
         return '/';
       }
       if (location.startsWith('/users') && !user.isAdmin) return '/';
+      if (location.startsWith('/audit') && !user.isAdmin) return '/';
       return null;
   }
 }

@@ -1,12 +1,16 @@
 import 'package:a2c_inventario/core/l10n/gen/app_localizations.dart';
 import 'package:a2c_inventario/core/theme/a2c_colors.dart';
 import 'package:a2c_inventario/core/theme/a2c_theme.dart';
+import 'package:a2c_inventario/features/sites/presentation/new_site_screen.dart';
 import 'package:a2c_inventario/shared/domain/asset_status.dart';
 import 'package:a2c_inventario/shared/widgets/a2c_buttons.dart';
 import 'package:a2c_inventario/shared/widgets/a2c_chips.dart';
 import 'package:a2c_inventario/shared/widgets/a2c_logo.dart';
 import 'package:a2c_inventario/shared/widgets/a2c_nav_bar.dart';
+import 'package:a2c_inventario/shared/widgets/empty_state.dart';
+import 'package:a2c_inventario/shared/widgets/loading_skeleton.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Widget _wrap(Widget child) => MaterialApp(
@@ -68,6 +72,7 @@ void main() {
         A2CPrimaryButton(
           label: 'Guardar',
           loading: true,
+          loadingLabel: 'Guardando usuario',
           onPressed: () => taps++,
         ),
       ),
@@ -75,6 +80,48 @@ void main() {
     await tester.tap(find.byType(A2CPrimaryButton));
     expect(taps, 0);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.bySemanticsLabel('Guardando usuario'), findsOneWidget);
+  });
+
+  testWidgets('los botones admiten etiquetas completas con texto al 130 %', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    const primaryLabel = 'Guardar el activo y continuar con el inventario';
+    const secondaryLabel = 'Reintentar la conexión con el servidor';
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: A2CTheme.light(),
+        home: const MediaQuery(
+          data: MediaQueryData(textScaler: TextScaler.linear(1.3)),
+          child: Scaffold(
+            body: Padding(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  A2CPrimaryButton(label: primaryLabel, onPressed: _noop),
+                  SizedBox(height: 12),
+                  A2CSecondaryButton(label: secondaryLabel, onPressed: _noop),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+    expect(find.text(primaryLabel), findsOneWidget);
+    expect(find.text(secondaryLabel), findsOneWidget);
+    expect(
+      tester.getSize(find.byType(A2CPrimaryButton)).height,
+      greaterThan(54),
+    );
   });
 
   testWidgets('A2CNavBar marca el destino activo y notifica toques', (
@@ -111,4 +158,90 @@ void main() {
     expect(size.width / size.height, closeTo(320 / 120, 0.01));
     expect(find.bySemanticsLabel('Constructora A2C'), findsOneWidget);
   });
+
+  testWidgets('el esqueleto anuncia la carga a lectores de pantalla', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _wrap(const A2CLoadingSkeleton(label: 'Cargando el inventario')),
+    );
+    final semantics = tester
+        .getSemantics(find.byType(A2CLoadingSkeleton))
+        .getSemanticsData();
+    expect(semantics.label, 'Cargando el inventario');
+    expect(semantics.flagsCollection.isLiveRegion, isTrue);
+  });
+
+  testWidgets('las listas anuncian la carga una sola vez', (tester) async {
+    await tester.pumpWidget(
+      _wrap(const A2CLoadingRows(label: 'Cargando usuarios')),
+    );
+    final semantics = tester
+        .getSemantics(find.byType(A2CLoadingRows))
+        .getSemanticsData();
+    expect(semantics.label, 'Cargando usuarios');
+    expect(semantics.flagsCollection.isLiveRegion, isTrue);
+  });
+
+  testWidgets(
+    'EmptyState sigue visible con texto al 130 % y anuncia el error',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: A2CTheme.light(),
+          home: const MediaQuery(
+            data: MediaQueryData(textScaler: TextScaler.linear(1.3)),
+            child: Scaffold(
+              body: EmptyState(
+                icon: Icons.cloud_off,
+                title: 'No hay conexión',
+                message: 'Revisa la señal e inténtalo otra vez.',
+                actionLabel: 'Reintentar',
+                onAction: _noop,
+              ),
+            ),
+          ),
+        ),
+      );
+      expect(tester.takeException(), isNull);
+      expect(find.text('Reintentar'), findsOneWidget);
+      expect(
+        find.bySemanticsLabel(
+          'No hay conexión. Revisa la señal e inténtalo otra vez.',
+        ),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets('el formulario de obra conserva etiquetas accesibles al 130 %', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          theme: A2CTheme.light(),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const MediaQuery(
+            data: MediaQueryData(textScaler: TextScaler.linear(1.3)),
+            child: NewSiteScreen(),
+          ),
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+    for (final label in [
+      'Nombre de la obra',
+      'Responsable',
+      'Dirección (opcional)',
+      'Latitud (opcional)',
+      'Longitud (opcional)',
+    ]) {
+      expect(find.bySemanticsLabel(label), findsOneWidget, reason: label);
+    }
+  });
 }
+
+void _noop() {}

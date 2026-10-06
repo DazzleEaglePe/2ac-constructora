@@ -3,14 +3,23 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import Redis from 'ioredis';
+import { ScheduleModule } from '@nestjs/schedule';
 import { LoggerModule } from 'nestjs-pino';
 import { validateEnv } from './config/env.schema';
 import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { HealthModule } from './modules/health/health.module';
 import { UsersModule } from './modules/users/users.module';
+import { SitesModule } from './modules/sites/sites.module';
+import { AssetsModule } from './modules/assets/assets.module';
+import { MovementsModule } from './modules/movements/movements.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { RealtimeModule } from './modules/realtime/realtime.module';
+import { IntegrityModule } from './modules/integrity/integrity.module';
 import { PrismaModule } from './prisma/prisma.module';
-import { RedisModule } from './redis/redis.module';
+import { REDIS, RedisModule } from './redis/redis.module';
+import { RedisThrottlerStorage } from './redis/redis-throttler.storage';
 
 @Module({
   imports: [
@@ -31,16 +40,26 @@ import { RedisModule } from './redis/redis.module';
             : undefined,
       },
     }),
-    // Límite general por IP (docs/06 §10). En S5 se mueve a Redis para varias instancias.
-    ThrottlerModule.forRoot({
-      throttlers: [{ name: 'default', ttl: 60_000, limit: 300 }],
-      skipIf: () => process.env.NODE_ENV === 'test',
+    ThrottlerModule.forRootAsync({
+      inject: [REDIS],
+      useFactory: (redis: Redis) => ({
+        storage: new RedisThrottlerStorage(redis),
+        throttlers: [{ name: 'default', ttl: 60_000, limit: 300 }],
+        skipIf: () => process.env.NODE_ENV === 'test',
+      }),
     }),
+    ScheduleModule.forRoot(),
     PrismaModule,
     RedisModule,
     AuditModule,
     AuthModule,
     UsersModule,
+    SitesModule,
+    AssetsModule,
+    MovementsModule,
+    DashboardModule,
+    RealtimeModule,
+    IntegrityModule,
     HealthModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

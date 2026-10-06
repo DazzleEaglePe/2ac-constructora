@@ -1,5 +1,46 @@
 openapi: 3.0.0
 paths:
+  /api/v1/audit-logs:
+    get:
+      operationId: AuditLogsController_list
+      parameters:
+        - name: userId
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: action
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: entityType
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: from
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: to
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: cursor
+          required: false
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      security:
+        - bearer: []
+      tags:
+        - audit-logs
   /api/v1/auth/login:
     post:
       operationId: AuthController_login
@@ -216,6 +257,552 @@ paths:
         - bearer: []
       tags:
         - users
+  /api/v1/sites:
+    get:
+      operationId: SitesController_list
+      parameters:
+        - name: type
+          required: false
+          in: query
+          schema:
+            type: string
+            enum:
+              - ALMACEN
+              - OBRA
+        - name: status
+          required: false
+          in: query
+          schema:
+            type: string
+            enum:
+              - ACTIVA
+              - CERRADA
+        - name: q
+          required: false
+          in: query
+          description: Busca por obra, dueño o dirección
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      security:
+        - bearer: []
+      tags:
+        - sites
+    post:
+      operationId: SitesController_create
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSiteDto"
+      responses:
+        "201":
+          description: ""
+      security:
+        - bearer: []
+      tags:
+        - sites
+  /api/v1/sites/{id}/stock:
+    get:
+      operationId: SitesController_stock
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: type
+          required: false
+          in: query
+          schema:
+            type: string
+            enum:
+              - MAQUINA
+              - HERRAMIENTA
+      responses:
+        "200":
+          description: ""
+      security:
+        - bearer: []
+      tags:
+        - sites
+  /api/v1/sites/{id}/close:
+    post:
+      operationId: SitesController_close
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      security:
+        - bearer: []
+      tags:
+        - sites
+  /api/v1/sites/{id}/reopen:
+    post:
+      operationId: SitesController_reopen
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      security:
+        - bearer: []
+      tags:
+        - sites
+  /api/v1/sites/{id}:
+    get:
+      operationId: SitesController_get
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      security:
+        - bearer: []
+      tags:
+        - sites
+    patch:
+      operationId: SitesController_update
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSiteDto"
+      responses:
+        "200":
+          description: ""
+      security:
+        - bearer: []
+      tags:
+        - sites
+  /api/v1/assets:
+    get:
+      operationId: AssetsController_list
+      parameters:
+        - name: q
+          required: false
+          in: query
+          description: Busca por nombre o código
+          schema:
+            type: string
+        - name: type
+          required: false
+          in: query
+          schema:
+            type: string
+            enum:
+              - MAQUINA
+              - HERRAMIENTA
+        - name: status
+          required: false
+          in: query
+          schema:
+            type: string
+            enum:
+              - OPERATIVO
+              - MANTENIMIENTO
+              - BAJA
+        - name: siteId
+          required: false
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      security:
+        - bearer: []
+      tags:
+        - assets
+    post:
+      operationId: AssetsController_create
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAssetDto"
+      responses:
+        "201":
+          description: ""
+      security:
+        - bearer: []
+      tags:
+        - assets
+  /api/v1/assets/search:
+    get:
+      operationId: AssetsController_search
+      parameters:
+        - name: q
+          required: false
+          in: query
+          description: Busca por nombre o código
+          schema:
+            type: string
+        - name: type
+          required: false
+          in: query
+          schema:
+            type: string
+            enum:
+              - MAQUINA
+              - HERRAMIENTA
+        - name: status
+          required: false
+          in: query
+          schema:
+            type: string
+            enum:
+              - OPERATIVO
+              - MANTENIMIENTO
+              - BAJA
+        - name: siteId
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: cursor
+          required: false
+          in: query
+          description: Último ID de la página anterior
+          schema:
+            type: string
+        - name: limit
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 100
+            default: 50
+            type: number
+      responses:
+        "200":
+          description: ""
+      security:
+        - bearer: []
+      tags:
+        - assets
+  /api/v1/assets/import/template:
+    get:
+      operationId: AssetsController_importTemplate
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      security:
+        - bearer: []
+      tags:
+        - assets
+  /api/v1/assets/import:
+    post:
+      operationId: AssetsController_importAssets
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "201":
+          description: ""
+      security:
+        - bearer: []
+      tags:
+        - assets
+  /api/v1/assets/next-code:
+    get:
+      operationId: AssetsController_nextCode
+      parameters:
+        - name: type
+          required: true
+          in: query
+          schema:
+            type: string
+            enum:
+              - MAQUINA
+              - HERRAMIENTA
+      responses:
+        "200":
+          description: ""
+      security:
+        - bearer: []
+      tags:
+        - assets
+  /api/v1/assets/{id}:
+    get:
+      operationId: AssetsController_get
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      security:
+        - bearer: []
+      tags:
+        - assets
+    patch:
+      operationId: AssetsController_update
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAssetDto"
+      responses:
+        "200":
+          description: ""
+      security:
+        - bearer: []
+      tags:
+        - assets
+  /api/v1/assets/{id}/status:
+    post:
+      operationId: AssetsController_changeStatus
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangeAssetStatusDto"
+      responses:
+        "200":
+          description: ""
+      security:
+        - bearer: []
+      tags:
+        - assets
+  /api/v1/assets/{id}/notes:
+    get:
+      operationId: AssetsController_notes
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      security:
+        - bearer: []
+      tags:
+        - assets
+    post:
+      operationId: AssetsController_addNote
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAssetNoteDto"
+      responses:
+        "201":
+          description: ""
+      security:
+        - bearer: []
+      tags:
+        - assets
+  /api/v1/movements:
+    get:
+      operationId: MovementsController_list
+      parameters:
+        - name: assetId
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: siteId
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: userId
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: from
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: to
+          required: false
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      security:
+        - bearer: []
+      tags:
+        - movements
+    post:
+      operationId: MovementsController_create
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMovementDto"
+      responses:
+        "201":
+          description: ""
+      security:
+        - bearer: []
+      tags:
+        - movements
+  /api/v1/movements/{id}:
+    get:
+      operationId: MovementsController_get
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      security:
+        - bearer: []
+      tags:
+        - movements
+  /api/v1/movements/{id}/revert:
+    post:
+      operationId: MovementsController_revert
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "201":
+          description: ""
+      security:
+        - bearer: []
+      tags:
+        - movements
+  /api/v1/observations:
+    get:
+      operationId: ObservationsController_list
+      parameters:
+        - name: status
+          required: false
+          in: query
+          schema:
+            type: string
+            enum:
+              - ABIERTA
+              - ATENDIDA
+        - name: assetId
+          required: false
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      security:
+        - bearer: []
+      tags:
+        - observations
+  /api/v1/observations/{id}/resolve:
+    post:
+      operationId: ObservationsController_resolve
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResolveObservationDto"
+      responses:
+        "200":
+          description: ""
+      security:
+        - bearer: []
+      tags:
+        - observations
+  /api/v1/dashboard:
+    get:
+      operationId: DashboardController_get
+      parameters:
+        - name: since
+          required: false
+          in: query
+          description: Fecha desde la última sincronización
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      security:
+        - bearer: []
+      tags:
+        - dashboard
   /health/live:
     get:
       operationId: HealthController_live
@@ -416,3 +1003,154 @@ components:
           enum:
             - ADMIN
             - OPERADOR
+    CreateSiteDto:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Obra Juan Ramírez
+        ownerName:
+          type: string
+          example: Juan Ramírez
+        address:
+          type: string
+          example: Calle Los Pinos 245, Lima
+        lat:
+          type: number
+          example: -12.0464
+          minimum: -90
+          maximum: 90
+        lng:
+          type: number
+          example: -77.0428
+          minimum: -180
+          maximum: 180
+      required:
+        - name
+        - ownerName
+    UpdateSiteDto:
+      type: object
+      properties:
+        name:
+          type: string
+        ownerName:
+          type: string
+        address:
+          type: string
+        lat:
+          type: object
+          minimum: -90
+          maximum: 90
+        lng:
+          type: object
+          minimum: -180
+          maximum: 180
+    CreateAssetDto:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - MAQUINA
+            - HERRAMIENTA
+        name:
+          type: string
+          example: Amoladora angular 4½"
+        description:
+          type: string
+        status:
+          type: string
+          enum:
+            - OPERATIVO
+            - MANTENIMIENTO
+            - BAJA
+          default: OPERATIVO
+        initialQuantity:
+          type: number
+          minimum: 1
+          example: 4
+        initialSiteId:
+          type: string
+      required:
+        - type
+        - name
+        - initialQuantity
+        - initialSiteId
+    UpdateAssetDto:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: object
+    ChangeAssetStatusDto:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - OPERATIVO
+            - MANTENIMIENTO
+            - BAJA
+        reason:
+          type: string
+          description: Obligatorio para dar de baja
+      required:
+        - status
+    CreateAssetNoteDto:
+      type: object
+      properties:
+        body:
+          type: string
+          example: Se revisó el cable y está en buen estado.
+      required:
+        - body
+    CreateMovementObservationDto:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - DANADO
+            - INCOMPLETO
+            - FALTANTE
+            - OTRO
+        description:
+          type: string
+          minLength: 3
+          maxLength: 500
+      required:
+        - type
+        - description
+    CreateMovementDto:
+      type: object
+      properties:
+        assetId:
+          type: string
+        fromSiteId:
+          type: string
+        toSiteId:
+          type: string
+        quantity:
+          type: number
+          minimum: 1
+        note:
+          type: string
+        clientCreatedAt:
+          type: string
+        observation:
+          $ref: "#/components/schemas/CreateMovementObservationDto"
+      required:
+        - assetId
+        - fromSiteId
+        - toSiteId
+        - quantity
+    ResolveObservationDto:
+      type: object
+      properties:
+        resolution:
+          type: string
+          minLength: 3
+          maxLength: 500
+      required:
+        - resolution

@@ -6,6 +6,7 @@ import { AuditService } from '../audit/audit.service';
 import type { AuthUser } from '../auth/auth.types';
 import { PasswordService } from '../auth/password.service';
 import { TokenService } from '../auth/token.service';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
 import type { CreateUserDto, ListUsersQuery, UpdateUserDto } from './dto/users.dto';
 import { toUserView, UserView } from './user.view';
 
@@ -22,6 +23,7 @@ export class UsersService {
     private readonly passwords: PasswordService,
     private readonly tokens: TokenService,
     private readonly audit: AuditService,
+    private readonly realtime: RealtimeGateway,
   ) {}
 
   async list(query: ListUsersQuery): Promise<{ data: UserView[]; nextCursor: string | null }> {
@@ -97,7 +99,7 @@ export class UsersService {
     if (dto.role && dto.role !== Role.ADMIN && before.role === Role.ADMIN) {
       await this.assertNotLastAdmin(id);
     }
-    return this.prisma.$transaction(async (tx) => {
+    const updated = await this.prisma.$transaction(async (tx) => {
       const user = await tx.user.update({ where: { id }, data: dto });
       if (dto.role && dto.role !== before.role) {
         // El rol viaja en el access token: se cierran sus sesiones para que tome efecto ya.
@@ -117,6 +119,8 @@ export class UsersService {
       );
       return toUserView(user);
     });
+    if (dto.role && dto.role !== before.role) this.realtime.revokeSession(id);
+    return updated;
   }
 
   async setActive(id: string, active: boolean, actor: AuthUser, ip?: string): Promise<UserView> {
@@ -131,7 +135,7 @@ export class UsersService {
       }
       if (before.role === Role.ADMIN) await this.assertNotLastAdmin(id);
     }
-    return this.prisma.$transaction(async (tx) => {
+    const updated = await this.prisma.$transaction(async (tx) => {
       const user = await tx.user.update({ where: { id }, data: { active } });
       if (!active) await this.tokens.revokeAllForUser(id, tx); // RN-13
       await this.audit.log(
@@ -146,6 +150,8 @@ export class UsersService {
       );
       return toUserView(user);
     });
+    if (!active) this.realtime.revokeSession(id);
+    return updated;
   }
 
   /** RF-USR-05: genera una contraseña temporal que se muestra una sola vez. */
@@ -170,6 +176,7 @@ export class UsersService {
         tx,
       );
     });
+    this.realtime.revokeSession(id);
     return { temporaryPassword };
   }
 
