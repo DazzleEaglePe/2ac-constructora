@@ -66,7 +66,7 @@ void main() {
       expect(find.text('Sin activos con este filtro'), findsOneWidget);
       expect(find.text('Aún no hay activos'), findsNothing);
 
-    await tester.tap(find.text('Todos'));
+      await tester.tap(find.text('Todos'));
       await tester.pumpAndSettle();
       expect(find.text('Taladro'), findsOneWidget);
       expect(find.text('Sin activos con este filtro'), findsNothing);
