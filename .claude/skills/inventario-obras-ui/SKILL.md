@@ -162,7 +162,7 @@ El ingreso de estas versiones lleva la marca "Constructora A2C" con el "2" en el
     - Al frente va una tarjeta nítida con sombra y 1–2 chips flotantes (uno amarillo).
     - Abajo, el titular de 30 px en peso 500 y 3 líneas, los puntos de progreso (el activo es una píldora blanca de 18 px), el CTA amarillo a todo el ancho ("Continuar" / "Comenzar") y "Saltar ›" arriba a la derecha.
   - **Pasos**: 1) la tarjeta de una obra con chips y el Almacén; 2) el flujo vertical Almacén → tarjeta "Moviendo" con borde punteado → tarjeta amarilla "Asignado a…" con quién y cuándo; 3) la tarjeta del gráfico de unidades en obra con chips de mantenimiento e historial.
-  - **Ingreso**: arriba un hero de 340 px con brillo amarillo, siluetas de edificios con franjas, la franja de seguridad y el ícono A2C de 76 px; debajo, una hoja `#161616` con radio de 24 px, campos DNI y contraseña, "Ingresar" amarillo y una lista de 3 beneficios con check amarillo.
+  - **Ingreso (v2)**: excepción a la regla del fondo blanco, pedida por la empresa: cabecera negra con franja de seguridad, logo A2C sobre negro y título "Ingresa a tu cuenta"; debajo, una hoja blanca con radio superior de 28 px y la pestaña única "Ingreso con DNI"; campos DNI (contador n/8) y contraseña con etiqueta arriba, borde negro y halo amarillo al enfocar; casilla "Recordar mi DNI en este equipo"; "Ingresar" amarillo; pie "o solicita tu usuario con tu administrador". Sin botones sociales.
 - **Footer de acción**: panel `#15131D` con esquinas superiores de 28 px y botón primario en píldora a todo el ancho.
 
 ## 5. Reglas del dominio (no romper)

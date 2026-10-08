@@ -41,8 +41,9 @@
 | RF-AUT-03  | El usuario puede **cerrar sesión** desde el panel.                                                               | M         | 1      |
 | RF-AUT-04  | Tras 5 intentos fallidos, la cuenta se bloquea 15 minutos y se informa al usuario.                               | M         | 1      |
 | RF-AUT-05  | En el primer ingreso con contraseña temporal, el usuario debe definir una contraseña nueva.                      | M         | 1      |
-| RF-AUT-06  | "¿Olvidaste tu contraseña?" indica contactar al administrador, quien puede restablecerla.                        | M         | 1      |
+| RF-AUT-06  | El ingreso indica que el usuario y la contraseña se solicitan al administrador, quien puede restablecerla.       | M         | 1      |
 | RF-AUT-07  | Desbloqueo con biometría (huella / Face ID) para reabrir la app con sesión activa.                               | C         | —      |
+| RF-AUT-08  | "Recordar mi DNI en este equipo" (marcada por defecto) precarga el DNI; la contraseña nunca se guarda.           | S         | 1      |
 
 **Criterios de aceptación (RF-AUT-01):**
 - Dado un DNI y contraseña válidos, cuando toco "Ingresar", entonces veo el panel en menos de 2 s con buena conexión.

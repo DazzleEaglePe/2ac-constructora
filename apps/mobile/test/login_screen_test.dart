@@ -1,22 +1,42 @@
 import 'package:a2c_inventario/core/network/api_failure.dart';
+import 'package:a2c_inventario/core/storage/preferences.dart';
 import 'package:a2c_inventario/core/storage/token_storage.dart';
 import 'package:a2c_inventario/core/theme/a2c_theme.dart';
 import 'package:a2c_inventario/features/auth/data/auth_repository.dart';
+import 'package:a2c_inventario/features/auth/domain/app_user.dart';
 import 'package:a2c_inventario/features/auth/presentation/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class _Repo extends Mock implements AuthRepository {}
 
 class _Storage extends Mock implements TokenStorage {}
 
+const _user = AppUser(
+  id: 'u1',
+  dni: '30456789',
+  fullName: 'Carlos Pérez',
+  role: Role.operador,
+  active: true,
+  mustChangePassword: false,
+);
+
 void main() {
   late _Repo repo;
+  late SharedPreferences prefs;
 
-  Future<void> pump(WidgetTester tester) async {
+  Future<void> pump(
+    WidgetTester tester, {
+    Map<String, Object> savedPrefs = const {},
+  }) async {
     repo = _Repo();
+    SharedPreferences.setMockInitialValues(savedPrefs);
+    prefs = await SharedPreferences.getInstance();
+    final storage = _Storage();
+    when(() => storage.saveRefreshToken(any())).thenAnswer((_) async {});
     tester.view.physicalSize = const Size(1170, 2532);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
@@ -24,7 +44,8 @@ void main() {
       ProviderScope(
         overrides: [
           authRepositoryProvider.overrideWithValue(repo),
-          tokenStorageProvider.overrideWithValue(_Storage()),
+          tokenStorageProvider.overrideWithValue(storage),
+          sharedPreferencesProvider.overrideWithValue(prefs),
         ],
         child: MaterialApp(theme: A2CTheme.light(), home: const LoginScreen()),
       ),
@@ -76,5 +97,53 @@ void main() {
     await pump(tester);
     await tester.enterText(find.byType(TextFormField).first, '12ab345678999');
     expect(find.text('12345678'), findsOneWidget);
+  });
+
+  testWidgets('precarga el DNI recordado en este equipo', (tester) async {
+    await pump(tester, savedPrefs: {'a2c.remembered_dni': '30456789'});
+    expect(find.text('30456789'), findsOneWidget);
+    expect(find.text('8/8'), findsOneWidget);
+  });
+
+  testWidgets('al ingresar recuerda el DNI si la casilla está marcada', (
+    tester,
+  ) async {
+    await pump(tester);
+    when(
+      () =>
+          repo.login(dni: '30456789', password: 'Clave2026a', deviceName: null),
+    ).thenAnswer(
+      (_) async => const LoginResult(
+        TokenPair(accessToken: 'at', refreshToken: 'rt'),
+        _user,
+      ),
+    );
+
+    await tester.enterText(find.byType(TextFormField).first, '30456789');
+    await tester.enterText(find.byType(TextFormField).last, 'Clave2026a');
+    await tester.tap(find.text('Ingresar'));
+    await tester.pumpAndSettle();
+
+    expect(prefs.getString('a2c.remembered_dni'), '30456789');
+  });
+
+  testWidgets('al desmarcar la casilla olvida el DNI guardado', (tester) async {
+    await pump(tester, savedPrefs: {'a2c.remembered_dni': '30456789'});
+    when(
+      () =>
+          repo.login(dni: '30456789', password: 'Clave2026a', deviceName: null),
+    ).thenAnswer(
+      (_) async => const LoginResult(
+        TokenPair(accessToken: 'at', refreshToken: 'rt'),
+        _user,
+      ),
+    );
+
+    await tester.tap(find.text('Recordar mi DNI en este equipo'));
+    await tester.enterText(find.byType(TextFormField).last, 'Clave2026a');
+    await tester.tap(find.text('Ingresar'));
+    await tester.pumpAndSettle();
+
+    expect(prefs.getString('a2c.remembered_dni'), isNull);
   });
 }
