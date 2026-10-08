@@ -153,4 +153,15 @@ class _MemoryTokenStorage implements TokenStorage {
 
   @override
   Future<void> clear() async => _refreshToken = null;
+
+  String? _rememberedDni;
+
+  @override
+  Future<String?> readRememberedDni() async => _rememberedDni;
+
+  @override
+  Future<void> saveRememberedDni(String dni) async => _rememberedDni = dni;
+
+  @override
+  Future<void> clearRememberedDni() async => _rememberedDni = null;
 }

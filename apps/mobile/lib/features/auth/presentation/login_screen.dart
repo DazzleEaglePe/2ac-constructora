@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/network/api_failure.dart';
-import '../../../core/storage/preferences.dart';
+import '../../../core/storage/token_storage.dart';
 import '../../../core/theme/a2c_colors.dart';
 import '../../../core/theme/a2c_typography.dart';
 import '../../../shared/widgets/a2c_buttons.dart';
@@ -35,8 +35,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    final saved = ref.read(rememberedDniProvider);
-    if (saved != null) _dni.text = saved;
+    _restoreRememberedDni();
+  }
+
+  Future<void> _restoreRememberedDni() async {
+    try {
+      final saved = await ref.read(tokenStorageProvider).readRememberedDni();
+      // No pisa lo que el usuario ya empezó a escribir.
+      if (!mounted || saved == null || _dni.text.isNotEmpty) return;
+      if (RegExp(r'^\d{8}$').hasMatch(saved)) _dni.text = saved;
+    } catch (_) {
+      // Si el almacén seguro no responde, se ingresa el DNI a mano.
+    }
+  }
+
+  Future<void> _persistRememberedDni(TokenStorage storage, String dni) async {
+    try {
+      await (_remember
+          ? storage.saveRememberedDni(dni)
+          : storage.clearRememberedDni());
+    } catch (_) {
+      // Recordar el DNI es una comodidad: un fallo aquí no invalida el ingreso.
+    }
   }
 
   @override
@@ -54,13 +74,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _error = null;
     });
     // Se toma antes de ingresar: al cambiar la sesión el router desmonta esta pantalla.
-    final rememberedDni = ref.read(rememberedDniProvider.notifier);
+    final storage = ref.read(tokenStorageProvider);
     final dni = _dni.text;
     try {
       await ref
           .read(sessionProvider.notifier)
           .login(dni: dni, password: _password.text);
-      await (_remember ? rememberedDni.remember(dni) : rememberedDni.forget());
+      await _persistRememberedDni(storage, dni);
       // El router redirige al panel o al cambio de contraseña.
     } on ApiFailure catch (e) {
       if (mounted) setState(() => _error = e);

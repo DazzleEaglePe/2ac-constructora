@@ -9,11 +9,19 @@ class TokenStorage {
 
   final FlutterSecureStorage _storage;
   static const _refreshKey = 'a2c.refresh_token';
+  static const _rememberedDniKey = 'a2c.remembered_dni';
 
   Future<String?> readRefreshToken() => _storage.read(key: _refreshKey);
   Future<void> saveRefreshToken(String token) =>
       _storage.write(key: _refreshKey, value: token);
   Future<void> clear() => _storage.delete(key: _refreshKey);
+
+  /// "Recordar mi DNI en este equipo" (RF-AUT-08). El DNI es dato personal:
+  /// va cifrado como el token y sobrevive al cierre de sesión.
+  Future<String?> readRememberedDni() => _storage.read(key: _rememberedDniKey);
+  Future<void> saveRememberedDni(String dni) =>
+      _storage.write(key: _rememberedDniKey, value: dni);
+  Future<void> clearRememberedDni() => _storage.delete(key: _rememberedDniKey);
 }
 
 /// Access token en memoria, leído por el interceptor HTTP.
