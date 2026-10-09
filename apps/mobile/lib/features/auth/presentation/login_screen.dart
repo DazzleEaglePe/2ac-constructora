@@ -112,10 +112,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         body: Stack(
           children: [
             const Positioned(
-              right: 0,
-              top: 6,
-              width: 230,
-              height: 300,
+              right: -130,
+              top: 40,
+              width: 380,
+              height: 285,
               child: CustomPaint(painter: LoginHeaderPainter()),
             ),
             const Positioned(
@@ -205,7 +205,7 @@ class _Header extends StatelessWidget {
                     ),
                   ),
                 ),
-                const A2CLogo(height: 27, onDark: true),
+                const A2CLogo(height: 32, onDark: true),
               ],
             ),
             const SizedBox(height: 30),

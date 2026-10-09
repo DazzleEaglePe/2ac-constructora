@@ -1,21 +1,63 @@
 import 'dart:math' as math;
+import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
 
 import '../../core/theme/a2c_colors.dart';
 import '../../core/theme/a2c_typography.dart';
 import '../../shared/widgets/a2c_logo.dart';
-import 'keyframes.dart';
 
-/// Animación del logo A2C para el splash: bucle de 6,5 s en un escenario de
-/// 720×720 escalado al ancho disponible (docs/09 §8, ADR-08).
+/// Línea de tiempo de la entrada "Trazado" (opción A del canvas, docs/09 §8),
+/// en segundos de diseño. Cada tramo devuelve su progreso 0–1 ya con su curva.
+abstract final class SplashTimeline {
+  /// Duración de diseño; la app la reproduce a [A2CSplashAnimation.speed].
+  static const total = 3.224;
+
+  static const _draw = Cubic(0.6, 0, 0.2, 1);
+  static const _rise = Cubic(0.2, 0.8, 0.2, 1);
+  static const _fill = Cubic(0.7, 0, 0.2, 1);
+
+  static double _segment(double t, double start, double end, Curve curve) {
+    final local = ((t * total - start) / (end - start)).clamp(0.0, 1.0);
+    return curve.transform(local);
+  }
+
+  /// 1. Marco y marcas finas, una tras otra.
+  static double thinLine(double t, int i) =>
+      _segment(t, i * 0.03, 0.624 + i * 0.03, _draw);
+
+  /// 2. Líneas de cota.
+  static double dimLine(double t, int i) =>
+      _segment(t, 0.416 + i * 0.05, 1.144 + i * 0.05, _draw);
+
+  /// 3. Flechas.
+  static double arrows(double t) => _segment(t, 0.988, 1.3, Curves.ease);
+
+  /// 4. Las hojas de la A suben desde la línea base.
+  static double bladeLeft(double t) => _segment(t, 1.144, 1.768, _rise);
+  static double bladeRight(double t) => _segment(t, 1.404, 2.028, _rise);
+
+  /// 5. El 2 se llena de izquierda a derecha.
+  static double two(double t) => _segment(t, 1.716, 2.444, _fill);
+
+  /// 6. Nombre y lema.
+  static double wordmark(double t) => _segment(t, 2.392, 2.912, _rise);
+  static double tagline(double t) => _segment(t, 2.704, 3.224, Curves.ease);
+}
+
+/// Entrada animada del logo "Cota": las cotas se trazan y el monograma se
+/// construye. Se reproduce una vez; con "reducir movimiento" muestra el final.
 class A2CSplashAnimation extends StatefulWidget {
-  const A2CSplashAnimation({super.key, this.onCycleComplete});
+  const A2CSplashAnimation({super.key, this.onComplete});
 
-  /// Se llama al terminar el primer ciclo completo.
-  final VoidCallback? onCycleComplete;
+  /// Se llama cuando termina la animación (o de inmediato sin movimiento).
+  final VoidCallback? onComplete;
 
-  static const cycle = Duration(milliseconds: 6500);
+  /// La app la reproduce un poco más rápida que el canvas (≈2,7 s).
+  static const speed = 1.2;
+  static final duration = Duration(
+    milliseconds: (SplashTimeline.total / speed * 1000).round(),
+  );
 
   @override
   State<A2CSplashAnimation> createState() => _A2CSplashAnimationState();
@@ -24,24 +66,21 @@ class A2CSplashAnimation extends StatefulWidget {
 class _A2CSplashAnimationState extends State<A2CSplashAnimation>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller =
-      AnimationController(vsync: this, duration: A2CSplashAnimation.cycle)
+      AnimationController(vsync: this, duration: A2CSplashAnimation.duration)
         ..addStatusListener((status) {
-          if (status == AnimationStatus.completed) {
-            widget.onCycleComplete?.call();
-            _controller.repeat();
-          }
+          if (status == AnimationStatus.completed) widget.onComplete?.call();
         });
-
-  bool _reduceMotion = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _reduceMotion = MediaQuery.of(context).disableAnimations;
-    if (_reduceMotion) {
-      _controller.value =
-          0.75; // estado final estático: monograma + CONSTRUCTORA
-    } else if (!_controller.isAnimating) {
+    if (_controller.isAnimating || _controller.isCompleted) return;
+    if (MediaQuery.of(context).disableAnimations) {
+      _controller.value = 1;
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => widget.onComplete?.call(),
+      );
+    } else {
       _controller.forward();
     }
   }
@@ -55,253 +94,169 @@ class _A2CSplashAnimationState extends State<A2CSplashAnimation>
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: 'Constructora A2C, cargando',
+      label: 'A2 Constructora. Tu visión, nuestra ejecución. Cargando',
       image: true,
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, _) => CustomPaint(
-          painter: SplashPainter(_reduceMotion ? 0.75 : _controller.value),
-          child: const SizedBox.expand(),
+      child: ExcludeSemantics(
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, _) {
+            final t = _controller.value;
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 280,
+                  height: 210,
+                  child: CustomPaint(painter: SplashPainter(t)),
+                ),
+                const SizedBox(height: 30),
+                _Reveal(
+                  progress: SplashTimeline.wordmark(t),
+                  offset: 12,
+                  child: SizedBox(
+                    width: 316,
+                    child: FittedBox(
+                      child: Text(
+                        'A2 CONSTRUCTORA',
+                        style: A2CText.wordmark.copyWith(fontSize: 40),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 9),
+                _Reveal(
+                  progress: SplashTimeline.tagline(t),
+                  offset: 8,
+                  child: SizedBox(
+                    width: 283,
+                    child: FittedBox(
+                      child: Text(
+                        'TU VISIÓN · NUESTRA EJECUCIÓN',
+                        style: A2CText.tagline.copyWith(fontSize: 14),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
   }
 }
 
-/// Dibuja un fotograma de la animación para un progreso `t` (0–1).
+class _Reveal extends StatelessWidget {
+  const _Reveal({
+    required this.progress,
+    required this.offset,
+    required this.child,
+  });
+
+  final double progress;
+  final double offset;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Opacity(
+    opacity: progress,
+    child: Transform.translate(
+      offset: Offset(0, offset * (1 - progress)),
+      child: child,
+    ),
+  );
+}
+
+/// Dibuja un fotograma del símbolo con cotas para el progreso `t` (0–1).
 class SplashPainter extends CustomPainter {
   SplashPainter(this.t);
 
   final double t;
 
-  static Color backgroundAt(double t) => step(t, const [
-    (0.0, Color(0xFFE6E6E3)),
-    (0.08, A2CColors.brandYellow),
-    (0.22, A2CColors.ink),
-    (0.40, Color(0xFFFFFFFF)),
-    (0.54, Color(0xFFF3F0E8)),
-    (0.88, Color(0xFFE6E6E3)),
-  ]);
+  // Centro de las flechas: crecen desde ahí, como en el canvas.
+  static const _arrowsCenter = Offset(124.1, 71.45);
 
   @override
   void paint(Canvas canvas, Size size) {
-    canvas.drawRect(Offset.zero & size, Paint()..color = backgroundAt(t));
-
-    // Escenario cuadrado de 720×720 centrado y escalado al ancho.
-    final scale = math.min(size.width, size.height) / 720;
+    const bounds = A2CMark.cotasBounds;
+    final s = math.min(size.width / bounds.width, size.height / bounds.height);
     canvas.save();
     canvas.translate(
-      (size.width - 720 * scale) / 2,
-      (size.height - 720 * scale) / 2,
+      (size.width - bounds.width * s) / 2,
+      (size.height - bounds.height * s) / 2,
     );
-    canvas.scale(scale);
-    canvas.clipRect(const Rect.fromLTWH(-2000, -2000, 4720, 4720));
-
-    _paintBeam(canvas);
-    _paintMonogram(canvas);
-    _paintWordmark(canvas);
-    _paintWipe(canvas, size, scale);
-    canvas.restore();
-  }
-
-  void _paintBeam(Canvas canvas) {
-    final dx = keyframe(t, const [
-      (0.23, -700),
-      (0.30, -80),
-      (0.34, -40),
-      (0.39, 800),
-    ], curve: const Cubic(0.6, 0, 0.3, 1));
-    if (dx <= -700 || dx >= 800) return;
-    canvas.save();
-    canvas.translate(260 + 75 + dx, -240 + 600);
-    canvas.rotate(20 * math.pi / 180);
-    canvas.drawRect(
-      const Rect.fromLTWH(-75, -600, 150, 1200),
-      Paint()..color = A2CColors.brandYellow,
-    );
-    canvas.restore();
-  }
-
-  void _paintMonogram(Canvas canvas) {
-    final ink = step(t, const [
-      (0.0, A2CColors.ink),
-      (0.22, Color(0xFFFFFFFF)),
-      (0.40, A2CColors.ink),
-    ]);
-    final two = step(t, const [
-      (0.0, A2CColors.brandYellow),
-      (0.08, A2CColors.ink),
-      (0.22, A2CColors.brandYellow),
-    ]);
-
-    final s = keyframe(t, const [
-      (0, 1),
-      (0.02, 0.9),
-      (0.05, 1.05),
-      (0.08, 1),
-      (0.54, 1),
-      (0.60, 0.7),
-      (0.86, 0.7),
-      (0.92, 1),
-    ]);
-    final ty = keyframe(t, const [
-      (0.54, 0),
-      (0.60, -40),
-      (0.86, -40),
-      (0.92, 0),
-    ]);
-    final aScale = keyframe(t, const [
-      (0.09, 1),
-      (0.13, 7),
-      (0.16, 5.5),
-      (0.18, 5.5),
-      (0.21, 1),
-    ]);
-    final cScale = keyframe(t, const [
-      (0.11, 1),
-      (0.15, 4),
-      (0.18, 4),
-      (0.21, 1),
-    ]);
-    final twoScale = keyframe(t, const [
-      (0.41, 1),
-      (0.46, 5),
-      (0.50, 5),
-      (0.53, 1),
-    ]);
-
-    canvas.save();
-    // Bloque del monograma: 320×120 en (200, 300), escalado desde su centro.
-    canvas.translate(360, 360 + ty);
     canvas.scale(s);
-    canvas.translate(-160, -60);
+    canvas.translate(-bounds.left, -bounds.top);
 
-    _drawScaledX(canvas, A2CLogoPainter.letterA(), ink, aScale, pivotX: 128);
-    canvas.save();
-    canvas.translate(180, 60);
-    canvas.scale(twoScale);
-    canvas.translate(-180, -60);
-    canvas.drawPath(A2CLogoPainter.digitTwo(), Paint()..color = two);
-    canvas.restore();
-    _drawScaledX(canvas, A2CLogoPainter.letterC(), ink, cScale, pivotX: 232);
-    canvas.restore();
-  }
+    final stroke = Paint()
+      ..color = A2CColors.ink
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.butt;
+    void partial((Offset, Offset) line, double p, double width) {
+      if (p <= 0) return;
+      final (a, b) = line;
+      canvas.drawLine(a, Offset.lerp(a, b, p)!, stroke..strokeWidth = width);
+    }
 
-  void _drawScaledX(
-    Canvas canvas,
-    Path path,
-    Color color,
-    double sx, {
-    required double pivotX,
-  }) {
-    canvas.save();
-    canvas.translate(pivotX, 0);
-    canvas.scale(sx, 1);
-    canvas.translate(-pivotX, 0);
-    canvas.drawPath(path, Paint()..color = color);
-    canvas.restore();
-  }
-
-  void _paintWordmark(Canvas canvas) {
-    // CONSTRUCTORA: se revela de izquierda a derecha y sale por la izquierda.
-    final revealEnd = keyframe(t, const [(0.56, 0), (0.64, 1)]);
-    final hideStart = keyframe(t, const [(0.86, 0), (0.91, 1)]);
-    if (revealEnd > 0 && hideStart < 1) {
-      final painter = TextPainter(
-        text: TextSpan(
-          text: 'CONSTRUCTORA',
-          style: A2CText.display.copyWith(
-            fontSize: 46,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 46 * 0.14,
-            height: 1,
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      final x = (720 - painter.width) / 2;
-      canvas.save();
-      canvas.clipRect(
-        Rect.fromLTRB(
-          x + painter.width * hideStart,
-          380,
-          x + painter.width * revealEnd,
-          460,
-        ),
+    for (var i = 0; i < A2CMark.thinLines.length; i++) {
+      partial(
+        A2CMark.thinLines[i],
+        SplashTimeline.thinLine(t, i),
+        A2CMark.thinWidth,
       );
-      painter.paint(canvas, Offset(x, 398));
+    }
+    for (var i = 0; i < A2CMark.dimLines.length; i++) {
+      partial(
+        A2CMark.dimLines[i],
+        SplashTimeline.dimLine(t, i),
+        A2CMark.dimWidth,
+      );
+    }
+
+    final arrows = SplashTimeline.arrows(t);
+    if (arrows > 0) {
+      final scale = lerpDouble(0.6, 1, arrows)!;
+      canvas.save();
+      canvas.translate(_arrowsCenter.dx, _arrowsCenter.dy);
+      canvas.scale(scale);
+      canvas.translate(-_arrowsCenter.dx, -_arrowsCenter.dy);
+      final fill = Paint()..color = A2CColors.ink.withValues(alpha: arrows);
+      for (final (tip, dir) in A2CMark.arrows) {
+        canvas.drawPath(A2CMark.arrowPath(tip, dir), fill);
+      }
       canvas.restore();
     }
 
-    final bar = keyframe(t, const [(0.62, 0), (0.68, 1), (0.86, 1), (0.90, 0)]);
-    if (bar > 0) {
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromCenter(
-            center: const Offset(360, 466),
-            width: 120 * bar,
-            height: 8,
-          ),
-          const Radius.circular(4),
-        ),
-        Paint()..color = A2CColors.brandYellow,
-      );
-    }
+    final ink = Paint()..color = A2CColors.ink;
+    _rise(canvas, A2CMark.bladeLeft(), ink, SplashTimeline.bladeLeft(t), 160);
+    _rise(
+      canvas,
+      A2CMark.bladeRight(),
+      ink,
+      SplashTimeline.bladeRight(t),
+      119.33,
+    );
 
-    final tag = keyframe(t, const [
-      (0.66, 0),
-      (0.72, 1),
-      (0.86, 1),
-      (0.90, 0),
-    ], curve: Curves.ease);
-    if (tag > 0) {
-      final painter = TextPainter(
-        text: TextSpan(
-          text: 'TU VISIÓN — NUESTRA EJECUCIÓN',
-          style: A2CText.label.copyWith(
-            fontSize: 17,
-            letterSpacing: 17 * 0.2,
-            color: A2CColors.inkSecondary.withValues(alpha: tag),
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      painter.paint(
-        canvas,
-        Offset((720 - painter.width) / 2, 490 + 10 * (1 - tag)),
-      );
+    final two = SplashTimeline.two(t);
+    if (two > 0) {
+      canvas.save();
+      canvas.clipRect(Rect.fromLTRB(111, -1, lerpDouble(111, 252, two)!, 161));
+      canvas.drawPath(A2CMark.two(), Paint()..color = A2CColors.brandYellow);
+      canvas.restore();
     }
+    canvas.restore();
   }
 
-  void _paintWipe(Canvas canvas, Size size, double scale) {
-    // Barrido de la franja de seguridad que tapa el corte negro → blanco.
-    final dx = keyframe(t, const [
-      (0.37, -1500),
-      (0.42, 800),
-    ], curve: const Cubic(0.7, 0, 0.3, 1));
-    if (dx <= -1500 || dx >= 800) return;
-    final band = Rect.fromLTWH(dx, -400, 1400, 1520);
+  /// La pieza sube 10 u mientras se descubre desde su base.
+  void _rise(Canvas canvas, Path path, Paint paint, double p, double bottom) {
+    if (p <= 0) return;
     canvas.save();
-    canvas.clipRect(band);
-    canvas.drawRect(band, Paint()..color = A2CColors.ink);
-    // Franjas a -45° de 48 px separadas 96 px (medido en perpendicular).
-    final yellow = Paint()
-      ..color = A2CColors.brandYellow
-      ..strokeWidth = 48;
-    for (
-      var x = band.left - band.height;
-      x < band.right + band.height;
-      x += 96 * math.sqrt2
-    ) {
-      canvas.drawLine(
-        Offset(x, band.bottom),
-        Offset(x + band.height, band.top),
-        yellow,
-      );
-    }
+    canvas.translate(0, 10 * (1 - p));
+    canvas.clipRect(Rect.fromLTRB(-1, bottom * (1 - p), 160, bottom + 1));
+    canvas.drawPath(path, paint);
     canvas.restore();
   }
 
   @override
-  bool shouldRepaint(SplashPainter old) => old.t != t;
+  bool shouldRepaint(SplashPainter oldDelegate) => oldDelegate.t != t;
 }

@@ -99,7 +99,7 @@ Estados: **Operativo** relleno negro y texto blanco · **Mantenimiento** fondo b
 
 ### Variante "Constructora A2C" (marca de la empresa) — recomendada para producción
 
-Parte de la variante Blanco y suma el **amarillo de obra** de la marca A2C (logo negro, gris y amarillo; franja de seguridad).
+Parte de la variante Blanco y suma el **amarillo de obra** de la marca A2 Constructora (logo "Cota" negro y amarillo con cotas de plano; franja de seguridad).
 
 | Token | Valor | Uso |
 |---|---|---|
@@ -156,13 +156,13 @@ El ingreso de estas versiones lleva la marca "Constructora A2C" con el "2" en el
 - **FAB**: círculo violeta de 60 px con brillo, por encima de la navegación.
 - **Mapa**: placeholder `--surface-2` con grilla tenue, calles más claras, pin violeta, chip de dirección y enlace "Abrir en Maps".
 - **Bienvenida (splash → onboarding → ingreso)**, en la variante A2C va en **fondo blanco** (ingreso `#F6F6F4` con la hoja del formulario en blanco), con componentes negros y acento amarillo; sobre blanco, el amarillo va solo como relleno (chips, tarjetas, CTA, área del gráfico), nunca como texto; las líneas de los gráficos van en negro:
-  - **Splash**: solo la marca "A2C" (el "2" en amarillo), centrada, con una barra de carga amarilla de 64 px y "CONSTRUCTORA" espaciado al pie.
+  - **Splash ("Trazado")**: fondo blanco con franja de seguridad; el logo Cota se construye: primero se trazan el marco y las cotas, aparecen las flechas, las hojas de la A suben desde la línea base, el 2 se llena de izquierda a derecha y entran "A2 CONSTRUCTORA" (Montserrat Black) y el lema (Montserrat Medium espaciada). Logo: monograma A (dos hojas con línea fina en el vértice) + 2 amarillo, rodeado de cotas de plano; geometría en `A2CMark` / docs/09 anexo A.
   - **Onboarding de 3 pasos**: la ilustración son **tarjetas reales de la app** flotando y superpuestas (zona de 420 px).
     - Detrás van tarjetas "fantasma" rotadas ±3–8°, con opacidad 0.5 y desenfoque de 1.2 px.
     - Al frente va una tarjeta nítida con sombra y 1–2 chips flotantes (uno amarillo).
     - Abajo, el titular de 30 px en peso 500 y 3 líneas, los puntos de progreso (el activo es una píldora blanca de 18 px), el CTA amarillo a todo el ancho ("Continuar" / "Comenzar") y "Saltar ›" arriba a la derecha.
   - **Pasos**: 1) la tarjeta de una obra con chips y el Almacén; 2) el flujo vertical Almacén → tarjeta "Moviendo" con borde punteado → tarjeta amarilla "Asignado a…" con quién y cuándo; 3) la tarjeta del gráfico de unidades en obra con chips de mantenimiento e historial.
-  - **Ingreso (v2)**: excepción a la regla del fondo blanco, pedida por la empresa: cabecera negra con franja de seguridad, logo A2C sobre negro y título "Ingresa a tu cuenta"; debajo, una hoja blanca con radio superior de 28 px y la pestaña única "Ingreso con DNI"; campos DNI (contador n/8) y contraseña con etiqueta arriba, borde negro y halo amarillo al enfocar; casilla "Recordar mi DNI en este equipo"; "Ingresar" amarillo; pie "o solicita tu usuario con tu administrador". Sin botones sociales.
+  - **Ingreso (v2)**: excepción a la regla del fondo blanco, pedida por la empresa: cabecera negra con franja de seguridad, cotas del logo en blanco al 13 % de fondo, símbolo Cota (A blanca, 2 amarillo) y título "Ingresa a tu cuenta"; debajo, una hoja blanca con radio superior de 28 px y la pestaña única "Ingreso con DNI"; campos DNI (contador n/8) y contraseña con etiqueta arriba, borde negro y halo amarillo al enfocar; casilla "Recordar mi DNI en este equipo"; "Ingresar" amarillo; pie "o solicita tu usuario con tu administrador". Sin botones sociales.
 - **Footer de acción**: panel `#15131D` con esquinas superiores de 28 px y botón primario en píldora a todo el ancho.
 
 ## 5. Reglas del dominio (no romper)

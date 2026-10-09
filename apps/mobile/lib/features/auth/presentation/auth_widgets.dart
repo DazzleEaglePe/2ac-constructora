@@ -3,31 +3,19 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/a2c_colors.dart';
 import '../../../core/theme/a2c_dimens.dart';
 import '../../../core/theme/a2c_typography.dart';
+import '../../../shared/widgets/a2c_logo.dart';
 
-/// Trazos diagonales tenues de la cabecera negra del ingreso (artboard
-/// "Ingreso v2"). Eco de la franja de obra, sin competir con el título.
+/// Cotas del logo como recurso gráfico de la cabecera negra del ingreso
+/// (canvas "Ingreso v2"): un plano tenue detrás del título.
 class LoginHeaderPainter extends CustomPainter {
   const LoginHeaderPainter();
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Coordenadas del diseño: caja de 230×300 anclada a la derecha.
-    final s = size.height / 300;
-    canvas.translate(size.width - 190 * s, 0);
-    canvas.scale(s);
-    final p = Paint()
-      ..color = A2CColors.onInk.withValues(alpha: 0.05)
-      ..style = PaintingStyle.stroke;
-    canvas.drawLine(
-      const Offset(40, 300),
-      const Offset(230, 40),
-      p..strokeWidth = 54,
-    );
-    canvas.drawLine(
-      const Offset(130, 300),
-      const Offset(290, 80),
-      p..strokeWidth = 24,
-    );
+    canvas.save();
+    A2CMark.fitInto(canvas, size, A2CMark.cotasBounds);
+    A2CMark.paintCotas(canvas, A2CColors.onInk.withValues(alpha: 0.13));
+    canvas.restore();
   }
 
   @override
