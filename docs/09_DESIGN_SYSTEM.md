@@ -20,12 +20,14 @@
 | Elemento         | Valor                                                                                   |
 | ---------------- | --------------------------------------------------------------------------------------- |
 | Nombre           | Constructora A2C **[POR CONFIRMAR vs. "A2 Constructora", P1]**                           |
-| Lema             | "Tu visión — nuestra ejecución"                                                          |
-| Monograma        | "A2C" geométrico en bloques: A y C negras, **"2" amarillo** escalonado (provisorio hasta el rebranding) |
+| Lema             | "TU VISIÓN · NUESTRA EJECUCIÓN" (Montserrat Medium, espaciado amplio)                    |
+| Logo "Cota"      | Monograma de una **A** en dos hojas que se tocan en el vértice (separadas por una línea fina; la derecha cortada en paralelo a la diagonal del 2) y un **"2" amarillo** geométrico, rodeados de **cotas** de plano: marco de extensión, cotas con flechas arriba e izquierda, cadena de cotas a la derecha y cota inferior. Logotipo "A2 CONSTRUCTORA" en Montserrat Black. Monograma de 250,8 × 160 u; con cotas, caja de 330 × 247 u |
+| Versiones        | Vertical (principal), horizontal, reverso sobre negro, monocromo, sobre amarillo, símbolo con cotas y **símbolo simplificado sin cotas** para tamaños pequeños (< 40 px, ícono de la app) |
+| Fuente del logo  | Illustrator `PROPUESTAS_AI.aic`, mesa "02 - Cota" (logotipo, retícula y variantes) |
 | Recursos         | `assets/branding/a2c-logo-1080x1080.mp4`, `a2c-logo-vertical-1080x1920.mp4`, `a2c-logo-540.gif` |
 | Franja de seguridad | `repeating-linear-gradient(-45deg, #FFC20E 0 12px, #0A0A0A 12px 24px)` — solo como acento (ingreso, cierre de la animación) |
 
-> El logo definitivo llegará con el rebranding. Todo lugar donde aparece el monograma usa el widget `A2CLogo`, así que cambiarlo es un solo reemplazo.
+> Todo lugar donde aparece el logo usa el widget `A2CLogo` (`cotas: true` para la versión con cotas); la geometría vive en `A2CMark` (anexo A).
 
 ## 3. Color
 
@@ -123,28 +125,29 @@
 | Indicador en vivo     | Punto amarillo con halo + "En vivo · hace N s"                                                      | `LiveIndicator`         |
 | Banda sin conexión    | Banda superior gris oscuro: "Sin conexión · datos de hace N min"                                     | `OfflineBanner`         |
 
-## 8. Animación del logo (splash)
+## 8. Animación de entrada (splash) — "Trazado"
 
-Bucle de **6,5 s** a 30 fps lógicos (60 fps de render). Monograma A2C en un lienzo de 720×720 (escalado al ancho de pantalla). Curva principal `Cubic(0.7, 0, 0.2, 1)`; los cambios de fondo son **cortes secos**.
+Fondo blanco con la franja de seguridad arriba. Se reproduce **una vez** (≈2,7 s en la app, 1,2× la velocidad del canvas) y sale cuando además la sesión está verificada; un toque la salta. Opción A del canvas (las opciones B "Plano a obra" y C "Ensamble" quedaron como alternativas).
 
-| Tramo (s)  | % del ciclo | Fondo      | Acción                                                                                 |
-| ---------- | ----------- | ---------- | -------------------------------------------------------------------------------------- |
-| 0,00–0,52  | 0–8 %       | `#E6E6E3`  | Monograma visible; rebote de escala 1 → 0,9 → 1,05 → 1                                 |
-| 0,52–1,43  | 8–22 %      | `#FFC20E`  | El "2" pasa a negro; la **A se estira** a la izquierda (scaleX 7) y la **C** a la derecha (scaleX 4); vuelven |
-| 1,43–2,60  | 22–40 %     | `#0A0A0A`  | A y C pasan a blanco; una **viga amarilla** inclinada 20° barre la pantalla              |
-| 2,40–2,73  | 37–42 %     | —          | **Barrido de la franja de seguridad** cubre el corte de color                           |
-| 2,60–3,51  | 40–54 %     | `#FFFFFF`  | El **"2" crece** hasta escala 5 y vuelve                                                |
-| 3,51–5,72  | 54–88 %     | `#F3F0E8`  | El monograma sube 40 px y baja a escala 0,7; **CONSTRUCTORA** se revela de izquierda a derecha; barra amarilla; lema con fundido |
-| 5,72–6,50  | 88–100 %    | `#E6E6E3`  | El texto sale y el monograma vuelve al centro                                           |
+| Tramo (s de diseño) | Acción | Curva |
+| ------------------- | ------ | ----- |
+| 0,00–1,01 | Se dibujan el marco y las marcas finas, una tras otra (30 ms de desfase) | `Cubic(0.6, 0, 0.2, 1)` |
+| 0,42–1,39 | Se dibujan las líneas de cota (50 ms de desfase) | `Cubic(0.6, 0, 0.2, 1)` |
+| 0,99–1,30 | Las flechas aparecen y crecen de 0,6 a 1 | `ease` |
+| 1,14–2,03 | Las hojas de la A suben 10 u mientras se descubren desde la base (la derecha 0,26 s después) | `Cubic(0.2, 0.8, 0.2, 1)` |
+| 1,72–2,44 | El 2 se llena de izquierda a derecha | `Cubic(0.7, 0, 0.2, 1)` |
+| 2,39–2,91 | "A2 CONSTRUCTORA" entra con fundido y subida de 12 px | `Cubic(0.2, 0.8, 0.2, 1)` |
+| 2,70–3,22 | El lema entra con fundido y subida de 8 px | `ease` |
 
-**Implementación Flutter:** `A2CSplashAnimation` = `AnimationController(duration: 6.5 s)` + `CustomPainter` con los trazados del monograma (coordenadas en `09` anexo A) e `Interval` por tramo. Si `MediaQuery.disableAnimations` es verdadero, se muestra el estado final estático. En usos posteriores, el splash se corta cuando la sesión está verificada (mínimo 1,5 s).
+**Implementación Flutter:** `A2CSplashAnimation` (`SplashTimeline` + `SplashPainter` sobre `A2CMark`). Con `MediaQuery.disableAnimations` se muestra el final de inmediato.
 
-### Anexo A — trazados del monograma (viewBox 320×120)
+### Anexo A — trazados del monograma "Cota" (unidades del manual)
 
 ```
-A: M0 120 L44 0 L84 0 L128 120 L96 120 L86 92 L42 92 L32 120 Z  M50 68 L78 68 L64 28 Z  (even-odd)
-2: M136 0 L224 0 L224 70 L170 70 L170 94 L224 94 L224 120 L136 120 L136 50 L190 50 L190 26 L136 26 Z
-C: M320 0 L232 0 L232 120 L320 120 L320 92 L262 92 L262 28 L320 28 Z
+Hoja izquierda: M0 160L85.4 0L85.4 69.13L36.9 160Z
+Hoja derecha:   M88.1 0L139.07 98.97L112.05 119.33L88.1 72.82Z
+2:              M139.2 2.2L212.7 2.2A38.1 38.1 0 0 1 250.8 40.3L250.8 47A29.8 29.8 0 0 1 238.93 70.8L162.63 128.3L243.4 128.3L243.4 160L112.28 160L112.28 128.3L214.99 50.9A6.8 6.8 0 0 0 217.7 45.47L217.7 41.3A8.9 8.9 0 0 0 208.8 32.4L139.2 32.4Z
+Caja con cotas: -40 -54 330 247 (líneas finas 1 u, cotas 1,5 u, flechas 13 × 8,6 u)
 ```
 
 ## 9. Onboarding e ingreso
@@ -152,7 +155,7 @@ C: M320 0 L232 0 L232 120 L320 120 L320 92 L262 92 L262 28 L320 28 Z
 | Pantalla    | Especificación                                                                                       |
 | ----------- | ---------------------------------------------------------------------------------------------------- |
 | Onboarding  | Fondo blanco. Zona de ilustración de 420 px con **tarjetas reales de la app** (frontal nítida con sombra; tarjetas "fantasma" detrás rotadas ±3–8°, opacidad 0,5, desenfoque 1,2 px); titular `headline` en 3 líneas; puntos (activo: píldora negra 18 px); CTA amarillo a todo el ancho; "Saltar ›" arriba a la derecha. Entrada: tarjetas suben 24 px con fundido (600 ms); texto con 100 ms de retraso. |
-| Ingreso     | Fondo `#F6F6F4`. Hero de 340 px: brillo amarillo radial, siluetas de edificios con franjas, franja de seguridad superior, ícono A2C 76 px (negro con "2" amarillo), "Constructora **A2C**" (A2C sobre etiqueta amarilla) y subtítulo. Hoja blanca radio 24 con DNI, contraseña, "Ingresar" y 3 beneficios con check negro en círculo amarillo. |
+| Ingreso (v2) | Cabecera negra `#0A0A0A` con franja de seguridad de 6 px, cotas del logo en blanco al 13 % como plano de fondo, botón volver (44 px, borde blanco 22 %), símbolo Cota sobre negro (A blanca, 2 amarillo), título "Ingresa a tu cuenta" 32 px y bajada blanca al 72 %. Hoja blanca con radio superior 28 que sube sobre la cabecera: pestaña única "Ingreso con DNI" con subrayado negro de 3 px, campos con etiqueta arriba e ícono (DNI con contador n/8 y ayuda "Ingrese su nro de documento."; contraseña con ojo), borde negro y halo amarillo al enfocar, casilla "Recordar mi DNI en este equipo" (relleno amarillo, check negro), "Ingresar" amarillo y el pie "o solicita tu usuario con tu administrador". Artboard "Ingreso v2 · referencia · A2C" del canvas. |
 
 ## 10. Movimiento (motion)
 

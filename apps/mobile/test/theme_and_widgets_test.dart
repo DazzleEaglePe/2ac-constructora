@@ -150,13 +150,22 @@ void main() {
     expect(find.text('Inventario'), findsOneWidget);
   });
 
-  testWidgets('A2CLogo respeta la proporción 320×120 y es accesible', (
+  testWidgets(
+    'A2CLogo respeta la proporción del monograma Cota y es accesible',
+    (tester) async {
+      await tester.pumpWidget(_wrap(const A2CLogo(height: 60)));
+      final size = tester.getSize(find.byType(CustomPaint).last);
+      expect(size.width / size.height, closeTo(250.8 / 160, 0.01));
+      expect(find.bySemanticsLabel('A2 Constructora'), findsOneWidget);
+    },
+  );
+
+  testWidgets('A2CLogo con cotas ocupa la caja del manual (330 × 247)', (
     tester,
   ) async {
-    await tester.pumpWidget(_wrap(const A2CLogo(height: 60)));
+    await tester.pumpWidget(_wrap(const A2CLogo(height: 100, cotas: true)));
     final size = tester.getSize(find.byType(CustomPaint).last);
-    expect(size.width / size.height, closeTo(320 / 120, 0.01));
-    expect(find.bySemanticsLabel('Constructora A2C'), findsOneWidget);
+    expect(size.width / size.height, closeTo(330 / 247, 0.01));
   });
 
   testWidgets('el esqueleto anuncia la carga a lectores de pantalla', (

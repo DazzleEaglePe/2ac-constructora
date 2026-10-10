@@ -6,6 +6,26 @@ import 'a2c_colors.dart';
 abstract final class A2CText {
   static const family = 'Geist';
   static const monoFamily = 'GeistMono';
+  static const brandFamily = 'Montserrat';
+
+  /// "A2 CONSTRUCTORA" del logotipo: Montserrat Black (docs/09 §2).
+  static const wordmark = TextStyle(
+    fontFamily: brandFamily,
+    fontWeight: FontWeight.w900,
+    fontVariations: [FontVariation('wght', 900)],
+    height: 1,
+    color: A2CColors.ink,
+  );
+
+  /// Lema "TU VISIÓN · NUESTRA EJECUCIÓN": Montserrat Medium espaciada.
+  static const tagline = TextStyle(
+    fontFamily: brandFamily,
+    fontWeight: FontWeight.w500,
+    fontVariations: [FontVariation('wght', 500)],
+    letterSpacing: 4,
+    height: 1,
+    color: Color(0xFF3A3A3A),
+  );
 
   static const display = TextStyle(
     fontFamily: family,
